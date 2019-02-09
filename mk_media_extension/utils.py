@@ -56,3 +56,21 @@ def print_obj(str):
         print(unicode(str).encode('utf8'))
     except NameError:  # For Python3
         print(str)
+
+
+def check_dir(path, skip=False, force=True):
+    """
+    Check whether path exists.
+
+    :param path: directory path.
+    :param skip: Boolean, Raise exception when skip is False and directory exists.
+    :param force: Boolean, Force to make directory when directory doesn't exist?
+    :return:
+    """
+    if not os.path.isdir(path):
+        if force:
+            os.makedirs(path)
+        else:
+            raise Exception("%s doesn't exist." % path)
+    elif not skip:
+        raise Exception("%s exists" % path)

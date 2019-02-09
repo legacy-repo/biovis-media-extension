@@ -5,10 +5,10 @@ import os
 import sys
 import logging
 import shutil
-import config
 from datetime import datetime
 from subprocess import CalledProcessError, PIPE, Popen
-from utils import print_obj
+from mk_media_extension import config
+from mk_media_extension.utils import print_obj
 
 logger = logging.getLogger(__name__)
 

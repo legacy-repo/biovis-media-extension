@@ -1,0 +1,17 @@
+bokeh==1.0.4
+certifi==2018.11.29
+chardet==3.0.4
+idna==2.8
+Jinja2==2.10
+Markdown==3.0.1
+MarkupSafe==1.1.0
+numpy==1.16.1
+packaging==19.0
+Pillow==5.4.1
+pyparsing==2.3.1
+python-dateutil==2.8.0
+PyYAML==3.13
+requests==2.21.0
+six==1.12.0
+tornado==5.1.1
+urllib3==1.24.1
