@@ -58,7 +58,7 @@ rparen = Suppress(')')
 quote = Suppress('"')
 eq = Suppress('=')
 
-plugin_kwarg = (lparen + delimitedList(Group(identifier + Optional(eq + listItem))))
+plugin_kwarg = (lparen + Optional(delimitedList(Group(identifier + Optional(eq + listItem)))) + rparen)
 
 
 def test():

@@ -2,7 +2,11 @@
 from __future__ import unicode_literals
 import os
 import shutil
-from datetime import datetime
+from random import Random as _Random
+import _thread
+_allocate_lock = _thread.allocate_lock
+_once_lock = _allocate_lock()
+_name_sequence = None
 
 
 class BashColors:
@@ -74,3 +78,57 @@ def check_dir(path, skip=False, force=True):
             raise Exception("%s doesn't exist." % path)
     elif not skip:
         raise Exception("%s exists" % path)
+
+
+class _RandomNameSequence:
+    """An instance of _RandomNameSequence generates an endless
+    sequence of unpredictable strings which can safely be incorporated
+    into file names.  Each string is six characters long.  Multiple
+    threads can safely use the same instance at the same time.
+    _RandomNameSequence is an iterator."""
+
+    characters = ("abcdefghijklmnopqrstuvwxyz" +  # noqa
+                  "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +  # noqa
+                  "0123456789_")
+
+    def __init__(self):
+        self.mutex = _allocate_lock()
+        self.normcase = os.path.normcase
+
+    @property
+    def rng(self):
+        cur_pid = os.getpid()
+        if cur_pid != getattr(self, '_rng_pid', None):
+            self._rng = _Random()
+            self._rng_pid = cur_pid
+        return self._rng
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        m = self.mutex
+        c = self.characters
+        choose = self.rng.choice
+
+        m.acquire()
+        try:
+            letters = [choose(c) for dummy in "123456"]
+        finally:
+            m.release()
+
+        return self.normcase(''.join(letters))
+
+
+def get_candidate_name():
+    """Common setup sequence for all user-callable interfaces."""
+
+    global _name_sequence
+    if _name_sequence is None:
+        _once_lock.acquire()
+        try:
+            if _name_sequence is None:
+                _name_sequence = _RandomNameSequence()
+        finally:
+            _once_lock.release()
+    return _name_sequence.next()

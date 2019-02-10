@@ -1,12 +1,14 @@
 import os
-from distutils.core import setup
+from setuptools import setup
 from mk_media_extension.version import get_version
+
 
 def get_packages(package):
     """Return root package and all sub-packages."""
     return [dirpath
             for dirpath, dirnames, filenames in os.walk(package)
             if os.path.exists(os.path.join(dirpath, '__init__.py'))]
+
 
 setup(
     name='mk-media-extension',
@@ -18,6 +20,7 @@ setup(
     url='http://choppy.3steps.cn/go-choppy/mk-media-extension',
     zip_safe=False,
     platforms='any',
+    include_package_data=True,
     packages=get_packages("mk_media_extension"),
     keywords='markdown, dynamic plot, multimedia',
     install_requires=[
@@ -48,4 +51,7 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
     ],
+    entry_points={
+        'markdown.extensions': ['mk_media_extension = mk_media_extension.extension:ChoppyPluginExtension']
+    }
 )

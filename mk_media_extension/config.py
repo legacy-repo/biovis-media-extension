@@ -7,6 +7,7 @@ import configparser
 
 CONFIG_FILES = ['~/.choppy/choppy.conf', '/etc/choppy.conf']
 
+
 def getconf(config_files):
     for f in config_files:
         try:
@@ -20,16 +21,19 @@ def getconf(config_files):
         if os.path.exists(loc):
             return loc
 
+
 config = configparser.ConfigParser()
 
 config_files = CONFIG_FILES
 conf_path = getconf(config_files)
+
 
 def check_oss_config():
     if access_key and access_secret and endpoint:
         return True
     else:
         raise Exception("You need to config oss section in choppy.conf")
+
 
 if conf_path:
     config.read(conf_path, encoding="utf-8")
@@ -40,6 +44,7 @@ if conf_path:
     endpoint = config.get('oss', 'endpoint')
     choppy_plugin_log = os.path.join('/tmp', 'choppy_plugin')
     check_oss_config()
+
 
 def get_oss_bin():
     if sys.platform == 'darwin':

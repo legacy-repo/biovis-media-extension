@@ -57,8 +57,8 @@ class Code:
 
             if not issubclass(Plugin, BasePlugin):
                 raise ValidationError('{0}.{1} must be a subclass of {2}.{3}'.format(
-                                    Plugin.__module__, Plugin.__name__, BasePlugin.__module__,
-                                    BasePlugin.__name__))
+                                      Plugin.__module__, Plugin.__name__, BasePlugin.__module__,
+                                      BasePlugin.__name__))
 
             plugin = Plugin(context, self.net_dir)
         return plugin
@@ -87,7 +87,7 @@ class Code:
                 items = plugin_kwarg.parseString(args_str).asList()
                 plugin_kwargs = {i[0]: i[1] for i in items if len(i) == 2}
             except ParseException as err:
-                color_msg = BashColors.get_color_msg('DANGER', 
+                color_msg = BashColors.get_color_msg('DANGER',
                                                      'Choppy plugin command[plugin_name: %s, args: %s]: syntax error - %s' % (plugin_name, args_str, str(err)))
                 self.logger.error(color_msg)
                 raise PluginSyntaxError('Can not parse choppy plugin command.')
@@ -165,9 +165,7 @@ class ChoppyPluginPreprocessor(Preprocessor):
 
         if self.net_dir is None:
             color_msg = BashColors.get_color_msg('WARNING', "mk_media_extension's kwarg net_dir is not set, so it will be instead by qiniu url.")
-            self.logger.warning(color_msg)            
-        elif os.path.isdir(self.net_dir):
-            raise Exception("mk_media_extension's kwarg net_dir is error.")
+            self.logger.warning(color_msg)
 
     def run(self, lines):
         new_lines = []
@@ -188,6 +186,7 @@ class ChoppyPluginPreprocessor(Preprocessor):
                 code_instance = Code(code_str, self.net_dir)
                 js_code_lines = code_instance.generate()
                 new_lines.extend(js_code_lines)
+                block = []
             # Multiple lines start point
             elif start_matched:
                 flag = True
@@ -202,22 +201,26 @@ class ChoppyPluginPreprocessor(Preprocessor):
                     code_instance = Code(code_str, self.net_dir)
                     js_code_lines = code_instance.generate()
                     new_lines.extend(js_code_lines)
+                    block = []
+                    flag = False
                 else:
                     block.append(line)
             # Not matched
             else:
                 new_lines.append(line)
 
-        if not new_lines and block:
-            new_lines = block
         return new_lines
 
 
 class ChoppyPluginExtension(Extension):
     def __init__(self, **kwargs):
         self.config = {
-            'net_dir' : [None, 'a directory which is used as html directory.'],
+            'net_dir': [None, 'a directory which is used as html directory.'],
         }
+
+        self.config.update({
+            'net_dir': [kwargs.get('net_dir'), 'a directory which is used as html directory.'],
+        })
 
     def extendMarkdown(self, md, md_globals):
         md.registerExtension(self)

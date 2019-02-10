@@ -1,5 +1,6 @@
 from mk_media_extension.extension import ChoppyPluginExtension
 
+
 def test(text):
     import markdown
     plugin = ChoppyPluginExtension(configs={})
@@ -10,9 +11,9 @@ if __name__ == "__main__":
     text = '''
     # JS file
 
-    @test-plugin(
-        js_script="/Users/FK/Downloads/example.js"
-    )
+    @test-plugin(number=2000)
+
+    @test-plugin(number=1)
     '''
 
     text_lst = [text, ]

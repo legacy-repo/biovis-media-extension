@@ -1,4 +1,8 @@
-include *.py *.in tests/*.py
 include LICENSE.txt
 include README.md
-prune dist
+include requirements.txt
+recursive-include mk_media_extension *
+recursive-exclude * __pycache__
+recursive-exclude * *.pyc
+recursive-exclude * *.pyo
+recursive-exclude mk_media_extension.egg-info *
