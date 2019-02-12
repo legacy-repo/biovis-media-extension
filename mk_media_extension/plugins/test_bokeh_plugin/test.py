@@ -5,18 +5,18 @@ import os
 from mk_media_extension.plugin import BasePlugin
 
 
-class TestPlugin(BasePlugin):
+class TestBokehPlugin(BasePlugin):
     """
     Test mk_media_extension plugin.
 
     :Example:
-    @test-plugin(oss='', )
+    @test-bokeh-plugin(oss='', )
     """
-    plugin_name = 'test-plugin'
+    plugin_name = 'test-bokeh-plugin'
 
     def external_css(self):
         test_css = os.path.join(os.path.dirname(__file__), 'test.css')
-        return [{'test_css': test_css}]
+        return [{'bokeh_plugin_css': test_css}]
 
     def check_plugin_args(self, **kwargs):
         number = kwargs.get('number')

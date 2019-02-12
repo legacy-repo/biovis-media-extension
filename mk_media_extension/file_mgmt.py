@@ -4,9 +4,7 @@ from __future__ import unicode_literals
 import os
 import sys
 import logging
-import shutil
-from datetime import datetime
-from subprocess import CalledProcessError, PIPE, Popen
+from subprocess import CalledProcessError, PIPE, Popen, check_output
 from mk_media_extension import config
 from mk_media_extension.utils import print_obj
 
@@ -45,3 +43,16 @@ def run_copy_files(first_path, second_path, include=None, exclude=None, recursiv
         logger.critical(e)
         logger.critical("access_key/access_secret or oss_link is not valid.")
 
+
+def get_oss_fsize(oss_path):
+    try:
+        oss_bin = config.get_oss_bin()
+        shell_cmd_lst = [oss_bin, "stat", "-i", config.access_key, "-k", config.access_secret,
+                         "-e", config.endpoint, oss_path]
+        shell_cmd = ' '.join(shell_cmd_lst) + "| grep 'Content-Length' | cut -d ':' -f 2"
+        output = check_output(shell_cmd, shell=True)
+        return output
+    except CalledProcessError as e:
+        logger.critical(e)
+        logger.critical("access_key/access_secret or oss_link is not valid.")
+        return 0

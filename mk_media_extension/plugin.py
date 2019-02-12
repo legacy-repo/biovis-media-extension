@@ -9,25 +9,34 @@ import logging
 import pkg_resources
 from mk_media_extension.utils import (check_dir, copy_and_overwrite,
                                       BashColors, get_candidate_name)
-from mk_media_extension.file_mgmt import run_copy_files
+from mk_media_extension.file_mgmt import run_copy_files, get_oss_fsize
 
 
 class BasePlugin:
     """
-    Plugin class is initialized by plugin args from markdown. Plugin args: @plugin_name(arg1=value, arg2=value, arg3=value)
+    Plugin class is initialized by plugin args from markdown.
+    Plugin args: @plugin_name(arg1=value, arg2=value, arg3=value)
     """
-    def __init__(self, context, net_dir=None):
+    def __init__(self, context, net_dir=None, sync_oss=True, sync_http=True, sync_ftp=True, target_fsize=10):
         """
         Initialize BasePlugin class.
 
         :param: context: a dict that contains all plugin arguments.
         :param: net_dir: plugin used it to get relative network path for all files that are needed by html. if net_dir is None, plugin will upload all files to qiniu and get a qiniu url.
+        :param: sync_oss: whether sync oss.
+        :param: sync_http: whether sync http.
+        :param: sync_ftp: whether sync ftp.
+        :param: file_size: file size(MB).
         """
         temp_dir = os.path.join('/tmp', 'choppy-media-extension')
         # Clean up the temp directory
         shutil.rmtree(temp_dir, ignore_errors=True)
         self.logger = logging.getLogger(__name__)
         self.net_dir = net_dir
+        self.sync_oss = sync_oss
+        self.sync_http = sync_http
+        self.sync_ftp = sync_ftp
+        self.target_fsize = target_fsize
         self.tmp_plugin_dir = os.path.join(temp_dir, str(uuid.uuid1()))
         self.plugin_data_dir = os.path.join(self.tmp_plugin_dir, 'plugin')
 
@@ -67,6 +76,29 @@ class BasePlugin:
     def plugin_name(self):
         raise NotImplementedError('BasePlugin Subclass must override plugin_name attribute.')
 
+    def get_file_size(self, path, protocol='http'):
+        # TODO: handle error
+        if protocol == 'http' or protocol == 'https':
+            content_length = requests.get(path, stream=True).headers['Content-length']
+        elif protocol == 'oss':
+            content_length = get_oss_fsize(path)  # MB
+        elif protocol == 'file':
+            content_length = os.path.getsize(path)
+        elif protocol == 'ftp':
+            # TODO: support to get file size(ftp).
+            content_length = 0
+
+        self.logger.debug('File Size(%s Bytes): %s' % (path, content_length))
+        file_size = int(content_length) / (1024 * 1024)  # MB
+        return file_size
+
+    def _fsize_is_ok(self, path, target_value, protocol='http'):
+        file_size = self.get_file_size(path, protocol=protocol)
+        if file_size < target_value:
+            return True
+        else:
+            return False
+
     def add_file_type(self, ftype):
         dest_dir = os.path.join(self.plugin_data_dir, ftype)
         check_dir(dest_dir, skip=True, force=True)
@@ -91,14 +123,45 @@ class BasePlugin:
         Filter context for getting all files.
         """
         files = []
-        pattern = r'^(/)?([^/\0]+(/)?)+$'
+        file_pattern = r'^(/)?([^/\0]+(/)?)+$'
+        ftp_pattern = r'^ftp://.*$'
+        http_pattern = r'^(http|https)://.*$'
+        oss_pattern = r'^oss://.*$'
+
         for key, value in self._context.items():
-            if isinstance(value, str) and re.match(pattern, str(value)):
-                files.append({
-                    'value': value,
-                    'key': key,
-                    'type': 'context'
-                })
+            if isinstance(value, str):
+                if re.match(file_pattern, str(value))\
+                   and self._fsize_is_ok(value, self.target_fsize, 'file'):
+                    files.append({
+                        'value': value,
+                        'key': key,
+                        'type': 'context'
+                    })
+
+                if self.sync_ftp and re.match(ftp_pattern, str(value))\
+                   and self._fsize_is_ok(value, self.target_fsize, 'ftp'):
+                    files.append({
+                        'value': value,
+                        'key': key,
+                        'type': 'context'
+                    })
+
+                if self.sync_http and re.match(http_pattern, str(value))\
+                   and self._fsize_is_ok(value, self.target_fsize, 'http'):
+                    files.append({
+                        'value': value,
+                        'key': key,
+                        'type': 'context'
+                    })
+
+                if self.sync_oss and re.match(oss_pattern, str(value))\
+                   and self._fsize_is_ok(value, self.target_fsize, 'oss'):
+                    files.append({
+                        'value': value,
+                        'key': key,
+                        'type': 'context'
+                    })
+
         return files
 
     @property
@@ -158,7 +221,7 @@ class BasePlugin:
         :param ftype: file type, it will determin where the file will be saved.
         """
         if self.search(key):
-            color_msg = BashColors.get_color_msg('The key (%s) is inside of index db. '
+            color_msg = BashColors.get_color_msg('WARNING', 'The key (%s) is inside of index db. '
                                                  'The value will be updated by new value.' % key)
             self.logger.warning(color_msg)
             idx = next((index for (index, d) in enumerate(self._index_db) if d["key"] == key), None)
@@ -207,13 +270,16 @@ class BasePlugin:
                 copy_and_overwrite(path, dest_filepath, is_file=True)
             elif protocol == 'oss':
                 run_copy_files(path, dest_filepath, recursive=False, silent=True)
-            else:
+            elif protocol == 'http' or protocol == 'https':
                 r = requests.get(net_path)
                 if r.status_code == 200:
                     with open(dest_filepath, "wb") as f:
                         f.write(r.content)
                 else:
                     self.logger.warning('No such file: %s' % path)
+            elif protocol == 'ftp':
+                # TODO: support to save ftp file.
+                pass
         else:
             self.logger.warning('No such file: %s' % path)
 
@@ -249,11 +315,11 @@ class BasePlugin:
             self.logger.warning('inject %s error, %s is not supported.' % (net_path, ftype))
         else:
             if ftype == 'css':
-                script = "<script>window.webInject.css(window.location.href + '%s', function(){console.log('%s injected.')})</script>" % (net_path, net_path)
+                script = "<script>window.webInject.css(window.location.origin + '/' + '%s', function(){console.log('%s injected.')})</script>" % (net_path, net_path)
                 self._rendered_js.append(script)
             elif ftype == 'js' or ftype == 'javascript':
-                script = "<script>window.webInject.js(window.location.href + '%s', function(){console.log('%s injected.')})</script>" % (net_path, net_path)
-                self._rendered_js.extend(script)
+                script = "<script>window.webInject.js(window.location.origin + '/' + '%s', function(){console.log('%s injected.')})</script>" % (net_path, net_path)
+                self._rendered_js.append(script)
 
     def _get_index_lst(self, external_files, ftype):
         try:
@@ -318,6 +384,45 @@ class BasePlugin:
     def plotly(self):
         pass
 
+    def index_js_lst(self, js_lst):
+        javascript = self._get_index_lst(js_lst, 'js')
+        net_path_lst = []
+        # TODO: async加速?
+        for item in javascript:
+            self.set_index(item.get('key'), item.get('value'), item.get('type'))
+            self.logger.debug('index_db: %s, context: %s' % (self._index_db, self.context))
+            net_path_lst.append(self.get_net_path(item.get('key')))
+        return net_path_lst
+
+    def autogen_js(self, required_js_lst, func_name, *args, div_id=None, configs=None):
+        """
+        Auto generate javascript code by function arguments.
+        """
+        import json
+
+        if div_id is None:
+            div_id = 'plugin_' + get_candidate_name()
+
+        div_component = '<div id="%s" class="%s">Loading...</div>'\
+                        % (div_id, self.plugin_name)
+
+        # Get network path
+        net_path_lst = self.index_js_lst(required_js_lst)
+
+        # Javascript function specification: the first two of js function must be div_id and configs.
+        args = list(args)
+        if args:
+            args.insert(0, div_id)
+            args.insert(1, configs)
+            func_args = json.dumps(args)
+        else:
+            func_args = json.dumps([div_id, configs, ])
+        js_code = '<script>var loader = new Loader(); loader.require(%s,  function () { window.addEventListener("load", function() { var args = JSON.parse(\'%s\'); %s.apply(this, args);})});</script>' % (net_path_lst, func_args, func_name)
+        codes = [div_component, ] + [js_code, ]
+        self.logger.debug("Rendered js code(%s): %s" % (self.plugin_name, codes))
+        self.logger.info("Js fucntion's arguments(%s): %s" % (func_name, func_args))
+        return codes
+
     def _transform(self, bokeh_plot=None, plotly_plot=None):
         """
         The second stage: It's necessary for some plugins to transform data or render plugin template before generating javascript code. May be you want to reimplement transform method when you have a new plugin that is not a plotly or bokeh plugin. If the plugin is a plotly or bokeh plugin, you need to reimplement plotly method or bokeh method, not transform method. (transform, save and index transformed data file.)
@@ -325,7 +430,9 @@ class BasePlugin:
         :return: the path of transformed file.
         """
         # Only support bokeh in the current version.
-        if bokeh_plot:
+        from bokeh.plotting.figure import Figure as bokehFigure
+        from plotly.graph_objs import Figure as plotlyFigure
+        if isinstance(bokeh_plot, bokehFigure):
             from bokeh.resources import CDN
             from bokeh.embed import autoload_static
 
@@ -349,8 +456,23 @@ class BasePlugin:
                     return [js_tag, ]
                 else:
                     raise Exception('virtual_path(%s) and net_path(%s) are wrong.' % (virtual_path, net_path))
-        else:
-            pass
+        elif isinstance(plotly_plot, plotlyFigure):
+            from plotly.offline import plot, get_plotlyjs
+            # Temporary directory
+            dest_dir = self._get_dest_dir('js')
+            plot_js_path = os.path.join(dest_dir, 'bokeh_%s.js' % get_candidate_name())
+            plotly_js = get_plotlyjs()
+
+            with open(plot_js_path, 'w') as f:
+                f.write(plotly_js)
+                self.set_index('plotly_js', plot_js_path, ftype='js')
+                net_path = self.get_net_path('plotly_js')
+                js_code = '<script type="text/javascript" src="%s"></script>' % net_path
+
+                self.logger.debug('Plotlyjs: %s' % js_code)
+                plot_div = plot(plotly_plot, output_type='div', include_plotlyjs=False)
+                self.logger.debug('Plotly Object Js Code: %s' % js_code)
+                return [js_code, plot_div, ]
 
     def render(self, **kwargs):
         """
@@ -389,7 +511,10 @@ class BasePlugin:
 
     def _get_virtual_path(self, path):
         virtual_path = path.replace(self.tmp_plugin_dir, '')
-        virtual_path = virtual_path.strip('/')
+        # To avoid invalid replace.
+        if virtual_path != path:
+            virtual_path = virtual_path.strip('/')
+
         return virtual_path
 
     def get_net_path(self, key):
@@ -413,16 +538,15 @@ class BasePlugin:
                 # TODO: upload to qiniu and return a url.
                 return virtual_path
         else:
-            self.logger.warning('No such file in net_dir(%s): %s' % (self.net_dir, virtual_path))
-            return virtual_path
+            self.logger.warning('No such key in index db: %s' % key)
 
     def get_real_path(self, key):
         """
         Get real path in local file system.
         """
-        record = self.search(key)
-        if record:
-            real_file_path = record.get('value')
+        record_idx = self.get_index(key)
+        if record_idx > -1:
+            real_file_path = self.get_value_by_idx(record_idx)
             return real_file_path
         else:
             return ''

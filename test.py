@@ -11,9 +11,11 @@ if __name__ == "__main__":
     text = '''
     # JS file
 
-    @test-plugin(number=2000)
+    @test-bokeh-plugin(number=2000)
 
-    @test-plugin(number=1)
+    @test-bokeh-plugin(number=1)
+
+    @igv-viewer()
     '''
 
     text_lst = [text, ]

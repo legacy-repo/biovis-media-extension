@@ -24,6 +24,7 @@ setup(
     packages=get_packages("mk_media_extension"),
     keywords='markdown, dynamic plot, multimedia',
     install_requires=[
+        'plotly==3.6.1',
         'bokeh==1.0.4',
         'certifi==2018.11.29',
         'chardet==3.0.4',

@@ -1,0 +1,5 @@
+.igv-viewer {
+    widows: 100%;
+    display: flex;
+    justify-content: center;
+}
