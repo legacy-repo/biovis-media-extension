@@ -4,7 +4,7 @@ function CircosScatterViewer(divId, configs, grch37Json, cytobandsCsv, snpDensit
       igvDiv.removeChild(igvDiv.firstChild);
     }
 
-    var width = igvDiv.offsetWidth
+    var width = igvDiv.offsetWidth * 0.6;
 
     var circosLine = new Circos({
       container: '#' + divId,

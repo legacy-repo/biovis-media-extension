@@ -28,9 +28,13 @@ class BasePlugin:
         :param: sync_ftp: whether sync ftp.
         :param: file_size: file size(MB).
         """
-        temp_dir = os.path.join('/tmp', 'choppy-media-extension')
-        # Clean up the temp directory
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        if net_dir:
+            temp_dir = os.path.join(net_dir, '.choppy-media-extension')
+        else:
+            temp_dir = os.path.join('/tmp', 'choppy-media-extension')
+            # Clean up the temp directory
+            # TODO: rmtree will cause other choppy process failed, how to solve it?
+            shutil.rmtree(temp_dir, ignore_errors=True)
         self.logger = logging.getLogger(__name__)
         self.net_dir = net_dir
         self.sync_oss = sync_oss
@@ -45,7 +49,8 @@ class BasePlugin:
             'javascript': os.path.join(self.plugin_data_dir, 'js'),
             'js': os.path.join(self.plugin_data_dir, 'js'),
             'data': os.path.join(self.plugin_data_dir, 'data'),
-            'context': os.path.join(self.plugin_data_dir, 'context')
+            'context': os.path.join(self.plugin_data_dir, 'context'),
+            'html': os.path.join(self.plugin_data_dir, 'html'),
         }
 
         for dir in self.ftype2dir.values():
@@ -254,20 +259,24 @@ class BasePlugin:
             raise NotImplementedError("Can't support the file type: %s" % ftype)
 
         if os.path.isfile(path):
+            is_file = True
+            net_path = 'file://' + os.path.abspath(path)
+        elif os.path.isdir(path):
+            is_file = False
             net_path = 'file://' + os.path.abspath(path)
         else:
             net_path = path
 
         self.logger.debug('_save_file net_path: %s' % net_path)
-        matched = re.match(r'(https|http|file|ftp|oss)://.*', net_path)
+        matched = re.match(r'^(https|http|file|ftp|oss)://.*$', net_path)
         if matched:
             protocol = matched.groups()[0]
             filename, file_extension = os.path.splitext(os.path.basename(path))
-            dest_filepath = os.path.join(dest_dir, '%s_%s%s' % (filename, get_candidate_name(), file_extension))
+            dest_filepath = os.path.join(dest_dir, '%s_%s%s' % (get_candidate_name(), filename, file_extension))
 
             self.set_index(key, dest_filepath, ftype=ftype)
             if protocol == 'file':
-                copy_and_overwrite(path, dest_filepath, is_file=True)
+                copy_and_overwrite(path, dest_filepath, is_file=is_file)
             elif protocol == 'oss':
                 run_copy_files(path, dest_filepath, recursive=False, silent=True)
             elif protocol == 'http' or protocol == 'https':
@@ -352,6 +361,17 @@ class BasePlugin:
             self.logger.debug('index_db: %s, context: %s' % (self._index_db, self.context))
             self.inject(self.get_net_path(item.get('key')), ftype='js')
 
+    def set_default_static(self):
+        default_css = os.path.join(os.path.dirname(__file__), 'static', 'default.css')
+        css_lst = [{
+            'default_css': default_css
+        }]
+        css = self._get_index_lst(css_lst, 'css')
+        # TODO: async加速?
+        for item in css:
+            self.set_index(item.get('key'), item.get('value'), item.get('type'))
+            self.inject(self.get_net_path(item.get('key')), ftype='css')
+
     def _prepare_css(self):
         css = self._get_index_lst(self.external_css(), 'css')
 
@@ -366,6 +386,7 @@ class BasePlugin:
         """
         One of stages: copy all dependencies to plugin data directory.
         """
+        self.set_default_static()
         self._prepare_css()
         self._prepare_js()
 
@@ -377,6 +398,27 @@ class BasePlugin:
         # TODO: async加速?
         for item in files:
             self.set_index(item.get('key'), item.get('value'), item.get('type'))
+
+    def multiqc(self, analysis_dir):
+        import sys
+        from subprocess import CalledProcessError, PIPE, Popen
+
+        output_dir = os.path.join(self._get_dest_dir('html'), get_candidate_name())
+        check_dir(output_dir, skip=True, force=True)
+        multiqc_cmd = ['multiqc', analysis_dir, '-o', output_dir]
+        try:
+            process = Popen(multiqc_cmd, stdout=PIPE)
+            while process.poll() is None:
+                output = process.stdout.readline()
+                if output == '' and process.poll() is not None:
+                    break
+                self.logger.info(output.strip())
+                sys.stdout.flush()
+                process.poll()
+            return output_dir
+        except CalledProcessError as e:
+            self.logger.critical(e)
+            return None
 
     def bokeh(self):
         pass
@@ -394,7 +436,7 @@ class BasePlugin:
             net_path_lst.append(self.get_net_path(item.get('key')))
         return net_path_lst
 
-    def autogen_js(self, required_js_lst, func_name, *args, div_id=None, configs=None):
+    def autogen_js(self, required_js_lst, func_name, *args, div_id=None, configs=None, html_components=None):
         """
         Auto generate javascript code by function arguments.
         """
@@ -403,8 +445,12 @@ class BasePlugin:
         if div_id is None:
             div_id = 'plugin_' + get_candidate_name()
 
-        div_component = '<div id="%s" class="%s">Loading...</div>'\
-                        % (div_id, self.plugin_name)
+        if html_components:
+            div_component = '%s<div id="%s" class="%s choppy-plot-container">Loading...</div>'\
+                            % (html_components, div_id, self.plugin_name)
+        else:
+            div_component = '<div id="%s" class="%s choppy-plot-container">Loading...</div>'\
+                            % (div_id, self.plugin_name)
 
         # Get network path
         net_path_lst = self.index_js_lst(required_js_lst)
@@ -429,6 +475,17 @@ class BasePlugin:
 
         :return: the path of transformed file.
         """
+        def index_files(filename_lst):
+            file_lst = [os.path.join(os.path.dirname(__file__), 'static', 'bokeh', filename)
+                        for filename in filename_lst]
+            js = self._get_index_lst(file_lst, 'js')
+            # TODO: async加速?
+            js_lst = []
+            for item in js:
+                self.set_index(item.get('key'), item.get('value'), item.get('type'))
+                js_lst.append(self.get_net_path(item.get('key')))
+            return js_lst
+
         # Only support bokeh in the current version.
         from bokeh.plotting.figure import Figure as bokehFigure
         from plotly.graph_objs import Figure as plotlyFigure
@@ -439,6 +496,11 @@ class BasePlugin:
             # Temporary directory
             dest_dir = self._get_dest_dir('js')
             plot_js_path = os.path.join(dest_dir, 'bokeh_%s.js' % get_candidate_name())
+
+            # TODO: How to cache bokeh js?
+            # js_files = ['bokeh-1.0.4.min.js', 'bokeh-gl-1.0.4.min.js', 'bokeh-tables-1.0.4.min.js',
+            #             'bokeh-widgets-1.0.4.min.js']
+            # js_resources = index_files(js_files)
 
             # URL
             virtual_path = self._get_virtual_path(plot_js_path)

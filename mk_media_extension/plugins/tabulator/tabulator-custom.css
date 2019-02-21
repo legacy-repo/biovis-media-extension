@@ -1,0 +1,7 @@
+.tabulator {
+    display: block;
+}
+
+.tabulator .tabulator-footer {
+    background-color: #ffffff;
+}

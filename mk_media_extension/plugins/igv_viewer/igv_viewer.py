@@ -45,7 +45,7 @@ class IgvViewer(BasePlugin):
             }
         ]
         # The arguments of function 'IgvViewer' are position paraments, all paraments are defined in igv-viewer.js.
-        # IgvViewer(div_id, dataUrl, genome, locus)
-        codes = self.autogen_js(js_lst, 'IgvViewer', kwargs.get('data_url'), kwargs.get('genome'),
+        # IgvViewer(div_id, configs, dataUrl, genome, locus)
+        codes = self.autogen_js(js_lst, 'IgvViewer', self.get_net_path('data_url'), kwargs.get('genome'),
                                 kwargs.get('locus'), div_id=temp_div_id)
         return codes

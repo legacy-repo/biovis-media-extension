@@ -41,7 +41,8 @@ setup(
         'requests==2.21.0',
         'six==1.12.0',
         'tornado==5.1.1',
-        'urllib3==1.24.1'
+        'urllib3==1.24.1',
+        'multiqc==1.7',
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',

@@ -47,7 +47,7 @@ class CircosScatterViewer(BasePlugin):
             }
         ]
         # The arguments of function 'CircosScatterViewer' are position paraments, all paraments are defined in circos-scatter-viewer.js.
-        # CircosScatterViewer(divId, grch37Json, cytobandsCsv, snpDensity250KbTxt, snpDensityTxt, snpDensity1MbTxt)
+        # CircosScatterViewer(divId, configs, grch37Json, cytobandsCsv, snpDensity250KbTxt, snpDensityTxt, snpDensity1MbTxt)
         codes = self.autogen_js(js_lst, 'CircosScatterViewer', self.get_net_path('grch37Json'),
                                 self.get_net_path('cytobandsCsv'), self.get_net_path('snpDensity250KbTxt'),
                                 self.get_net_path('snpDensityTxt'), self.get_net_path('snpDensity1MbTxt'),
