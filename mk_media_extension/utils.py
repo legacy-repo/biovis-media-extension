@@ -2,6 +2,9 @@
 from __future__ import unicode_literals
 import os
 import shutil
+import socket
+from contextlib import closing
+
 from random import Random as _Random
 import _thread
 _allocate_lock = _thread.allocate_lock
@@ -132,3 +135,10 @@ def get_candidate_name():
         finally:
             _once_lock.release()
     return _name_sequence.next()
+
+
+def find_free_port():
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(('', 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]

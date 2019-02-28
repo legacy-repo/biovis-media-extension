@@ -43,6 +43,9 @@ setup(
         'tornado==5.1.1',
         'urllib3==1.24.1',
         'multiqc==1.7',
+        'sqlalchemy==1.2.18',
+        'docker==3.7.0',
+        'psutil==5.5.1'
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',

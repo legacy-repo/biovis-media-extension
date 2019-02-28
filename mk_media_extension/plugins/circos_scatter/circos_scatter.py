@@ -18,6 +18,7 @@ class CircosScatterViewer(BasePlugin):
     3. locus:
     """
     plugin_name = 'circos-scatter-viewer'
+    is_server = False
 
     def external_css(self):
         circos_viewer_css = os.path.join(os.path.dirname(__file__), 'circos-scatter-viewer.css')

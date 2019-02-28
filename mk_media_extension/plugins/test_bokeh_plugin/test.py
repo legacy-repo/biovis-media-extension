@@ -13,6 +13,7 @@ class TestBokehPlugin(BasePlugin):
     @test-bokeh-plugin(oss='', )
     """
     plugin_name = 'test-bokeh-plugin'
+    is_server = False
 
     def external_css(self):
         test_css = os.path.join(os.path.dirname(__file__), 'test.css')

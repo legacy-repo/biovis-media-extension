@@ -18,6 +18,7 @@ class IgvViewer(BasePlugin):
     3. locus:
     """
     plugin_name = 'igv-viewer'
+    is_server = False
 
     def external_css(self):
         igv_viewer_css = os.path.join(os.path.dirname(__file__), 'igv-viewer.css')

@@ -13,6 +13,7 @@ class PCAPlugin(BasePlugin):
     @pca(csvFile='')
     """
     plugin_name = 'pca'
+    is_server = False
 
     def external_css(self):
         pca_css = os.path.join(os.path.dirname(__file__), 'pca.css')

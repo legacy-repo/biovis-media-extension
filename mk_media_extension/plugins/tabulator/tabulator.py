@@ -16,6 +16,7 @@ class Tabulator(BasePlugin):
     1. dataUrl
     """
     plugin_name = 'tabulator'
+    is_server = False
 
     def external_css(self):
         tabulator_css = os.path.join(os.path.dirname(__file__), 'tabulator.min.css')

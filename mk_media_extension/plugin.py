@@ -4,11 +4,17 @@ import os
 import re
 import uuid
 import shutil
+import hashlib
 import requests
 import logging
+import collections
 import pkg_resources
+from mk_media_extension.models import add_plugin, get_plugin
+from mk_media_extension.docker_mgmt import Docker
+from mk_media_extension.process_mgmt import Process
 from mk_media_extension.utils import (check_dir, copy_and_overwrite,
-                                      BashColors, get_candidate_name)
+                                      BashColors, get_candidate_name,
+                                      find_free_port)
 from mk_media_extension.file_mgmt import run_copy_files, get_oss_fsize
 
 
@@ -16,7 +22,17 @@ class BasePlugin:
     """
     Plugin class is initialized by plugin args from markdown.
     Plugin args: @plugin_name(arg1=value, arg2=value, arg3=value)
+
+    :Examples:
+    1. render mode
+    2. bokeh static mode
+    3. plotly static mode
+    4. server mode
+    5. multiqc mode
     """
+    docker_image = None
+    plugin_dir = None
+
     def __init__(self, context, net_dir=None, sync_oss=True, sync_http=True, sync_ftp=True, target_fsize=10):
         """
         Initialize BasePlugin class.
@@ -81,6 +97,10 @@ class BasePlugin:
     def plugin_name(self):
         raise NotImplementedError('BasePlugin Subclass must override plugin_name attribute.')
 
+    @property
+    def is_server(self):
+        raise NotImplementedError('BasePlugin Subclass must override is_server attribute.')
+
     def get_file_size(self, path, protocol='http'):
         # TODO: handle error
         if protocol == 'http' or protocol == 'https':
@@ -88,7 +108,11 @@ class BasePlugin:
         elif protocol == 'oss':
             content_length = get_oss_fsize(path)  # MB
         elif protocol == 'file':
-            content_length = os.path.getsize(path)
+            if os.path.isfile(path):
+                content_length = os.path.getsize(path)
+            else:
+                # If path does't exist, skip it by giving a huge value.
+                content_length = 10000000
         elif protocol == 'ftp':
             # TODO: support to get file size(ftp).
             content_length = 0
@@ -285,12 +309,12 @@ class BasePlugin:
                     with open(dest_filepath, "wb") as f:
                         f.write(r.content)
                 else:
-                    self.logger.warning('No such file: %s' % path)
+                    self.logger.debug('No such file: %s' % path)
             elif protocol == 'ftp':
                 # TODO: support to save ftp file.
                 pass
         else:
-            self.logger.warning('No such file: %s' % path)
+            self.logger.debug('No such file: %s' % path)
 
     def external_data(self):
         """
@@ -426,6 +450,67 @@ class BasePlugin:
     def plotly(self):
         pass
 
+    def docker(self):
+        if self.is_server:
+            if self.docker_image:
+                docker = Docker()
+                port = find_free_port()
+                docker_obj = docker.run_docker(self.docker_image, {}, ports={'3838/tcp': port})
+                id = docker_obj.id
+                access_url = 'http://127.0.0.1:%s' % port
+                return id, access_url
+            else:
+                return None, None
+
+    def server(self):
+        if self.is_server:
+            if self.plugin_dir:
+                src_code_dir = os.path.join(self.plugin_dir, self.plugin_name)
+                process = Process(src_code_dir)
+                port = find_free_port()
+                process_id = process.run_command(port=port, **self.context)
+                access_url = 'http://127.0.0.1:%s' % port
+                return process_id, access_url
+            else:
+                return None, None
+
+    def _md5(self, string):
+        md5 = hashlib.md5()
+        md5.update(string.encode(encoding='utf-8'))
+        return md5.hexdigest()
+
+    def _get_args(self, **kwargs):
+        sorted_kwargs = collections.OrderedDict(sorted(kwargs.items()))
+        return ', '.join('%s=%r' % x for x in sorted_kwargs.items())
+
+    def _launch_server_plugin(self):
+        # write metadata to plugin.db
+        metadata = {}
+        metadata['name'] = self.plugin_name
+        metadata['command'] = '@{}({})'.format(self.plugin_name, self._get_args(**self.context))
+        metadata['command_md5'] = self._md5(metadata['command'])
+
+        plugin = get_plugin(self.net_dir, metadata['command_md5'])
+        if not plugin:
+            metadata['is_server'] = self.is_server
+            container_id, access_url = self.docker()
+            if container_id and access_url:
+                metadata['container_id'] = container_id
+                metadata['access_url'] = access_url
+            else:
+                process_id, access_url = self.server()
+                metadata['process_id'] = process_id
+                metadata['access_url'] = access_url
+
+            if access_url:
+                add_plugin(self.net_dir, **metadata)
+            self.logger.info("Launching plugin server(%s) successfully, Serving on %s.\n" % (self.plugin_name, access_url))
+            return access_url
+        else:
+            self.logger.info("Command doesn't changed, so skip it.")
+            self.logger.info("Launching plugin server(%s) successfully, Serving on %s.\n" % (self.plugin_name, access_url))
+            return plugin.access_url
+
     def index_js_lst(self, js_lst):
         javascript = self._get_index_lst(js_lst, 'js')
         net_path_lst = []
@@ -438,7 +523,7 @@ class BasePlugin:
 
     def autogen_js(self, required_js_lst, func_name, *args, div_id=None, configs=None, html_components=None):
         """
-        Auto generate javascript code by function arguments.
+        Plugin Helper: Auto generate javascript code by function arguments.
         """
         import json
 
@@ -555,6 +640,13 @@ class BasePlugin:
             rendered_lst = self._transform(bokeh_plot=bokeh_plot, plotly_plot=plotly_plot)
             if not isinstance(rendered_lst, list):
                 raise NotImplementedError('Plugin does not yet support plotly framework.')
+        elif self.is_server:
+            access_url = self._launch_server_plugin()
+            iframe_tag = '<iframe src="{}" seamless frameborder="0" scrolling="no" class="iframe" \
+                          name="{}" width="100%"></iframe>'
+            iframe = iframe_tag.format(access_url, self.plugin_name)
+            resize_js = "<script>$('.iframe').iFrameResize([{log: true}]);</script>"
+            return [iframe, resize_js]
         else:
             rendered_lst = self.render(**self._context)
             if not isinstance(rendered_lst, list):
@@ -569,7 +661,9 @@ class BasePlugin:
         Run three stages step by step.
         """
         self.prepare()
-        return self._wrapper_render()
+        code_lst = self._wrapper_render()
+        code_lst.append('<hr/>')
+        return code_lst
 
     def _get_virtual_path(self, path):
         virtual_path = path.replace(self.tmp_plugin_dir, '')

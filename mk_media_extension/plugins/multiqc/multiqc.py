@@ -13,6 +13,7 @@ class MultiqcPlugin(BasePlugin):
     @multiqc(analysisDir='', )
     """
     plugin_name = 'multiqc'
+    is_server = False
 
     def external_css(self):
         test_css = os.path.join(os.path.dirname(__file__), 'multiqc.css')

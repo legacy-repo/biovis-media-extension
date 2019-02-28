@@ -8,15 +8,17 @@ from .tabulator.tabulator import Tabulator
 from .multiqc.multiqc import MultiqcPlugin
 from .boxplot.boxplot import BoxplotPlugin
 from .pca.pca import PCAPlugin
+from .scatter_plot.scatter_plot import ScatterPlotPlugin
+from .bubble_plot.bubble_plot import BubblePlotPlugin
 
 
 class PluginRegistry:
     def __init__(self):
         self._internal_plugins = {}
 
-    def register(self, plugin_name, plugin_class):
+    def register(self, plugin_class):
         self._internal_plugins.update({
-            plugin_name: plugin_class
+            plugin_class.plugin_name: plugin_class
         })
         return self
 
@@ -26,13 +28,15 @@ class PluginRegistry:
 
 
 plugin_registry = PluginRegistry()
-plugin_registry.register(TestBokehPlugin.plugin_name, TestBokehPlugin)
-plugin_registry.register(TestPlotlyPlugin.plugin_name, TestPlotlyPlugin)
-plugin_registry.register(IgvViewer.plugin_name, IgvViewer)
-plugin_registry.register(CircosScatterViewer.plugin_name, CircosScatterViewer)
-plugin_registry.register(Tabulator.plugin_name, Tabulator)
-plugin_registry.register(MultiqcPlugin.plugin_name, MultiqcPlugin)
-plugin_registry.register(BoxplotPlugin.plugin_name, BoxplotPlugin)
-plugin_registry.register(PCAPlugin.plugin_name, PCAPlugin)
+plugin_registry.register(TestBokehPlugin)
+plugin_registry.register(TestPlotlyPlugin)
+plugin_registry.register(IgvViewer)
+plugin_registry.register(CircosScatterViewer)
+plugin_registry.register(Tabulator)
+plugin_registry.register(MultiqcPlugin)
+plugin_registry.register(BoxplotPlugin)
+plugin_registry.register(PCAPlugin)
+plugin_registry.register(ScatterPlotPlugin)
+plugin_registry.register(BubblePlotPlugin)
 
 internal_plugins = plugin_registry.internal_plugins

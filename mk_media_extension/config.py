@@ -42,7 +42,7 @@ if conf_path:
     access_key = config.get('oss', 'access_key')
     access_secret = config.get('oss', 'access_secret')
     endpoint = config.get('oss', 'endpoint')
-    choppy_plugin_log = os.path.join('/tmp', 'choppy_plugin')
+    choppy_plugin_log = os.path.join('/tmp', 'choppy-plugin')
     check_oss_config()
 
 

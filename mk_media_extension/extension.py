@@ -77,7 +77,7 @@ class Code:
             plugin_name = matched.group('plugin_name')
             args_str = matched.group('args_str')
             color_msg = BashColors.get_color_msg('SUCCESS',
-                                                 'Parsed choppy plugin command: %s and %s' %
+                                                 '\nParsed choppy plugin command: %s and %s' %
                                                  (plugin_name, args_str))
             self.logger.info(color_msg)
 
@@ -150,7 +150,12 @@ class Code:
         context = self._convert_context(plugin_kwargs)
         plugin = self.load_plugin(plugin_name, context)
         # e.g. ["<script id='plot' src=''>", "</script>"]
-        return plugin.run()
+        try:
+            code_lst = plugin.run()
+        except Exception as err:
+            code_lst = ['<p>Error: for more information, please check logs.</p>']
+            self.logger.warning("Generate code for %s error: %s" % (plugin_name, str(err)))
+        return code_lst
 
 
 class ChoppyPluginPreprocessor(Preprocessor):

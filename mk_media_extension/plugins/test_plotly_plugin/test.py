@@ -13,6 +13,7 @@ class TestPlotlyPlugin(BasePlugin):
     @test-plotly-plugin()
     """
     plugin_name = 'test-plotly-plugin'
+    is_server = False
 
     def external_css(self):
         test_css = os.path.join(os.path.dirname(__file__), 'test.css')

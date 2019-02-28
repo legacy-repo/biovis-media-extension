@@ -13,6 +13,7 @@ class BoxplotPlugin(BasePlugin):
     @boxplot(csvFile='')
     """
     plugin_name = 'boxplot'
+    is_server = False
 
     def external_css(self):
         boxplot_css = os.path.join(os.path.dirname(__file__), 'boxplot.css')
