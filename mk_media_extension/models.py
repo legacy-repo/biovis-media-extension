@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Column, String, Boolean, Integer
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
+from mk_media_extension.utils import check_dir
 
 
 Base = declarative_base()
@@ -23,11 +24,11 @@ class Plugin(Base):
     access_url = Column(String(255), nullable=False)
 
 
-def init_db(site_dir):
+def init_db():
     # Create an engine that stores data in the local directory's
     # sqlalchemy_example.db file.
-    if site_dir is None:
-        site_dir = '/tmp'
+    site_dir = '/tmp/choppy-media-extension'
+    check_dir(site_dir, skip=True)
     engine = create_engine('sqlite:///%s' % os.path.join(site_dir, 'plugin.db'))
 
     # Create all tables in the engine. This is equivalent to "Create Table"
@@ -36,9 +37,9 @@ def init_db(site_dir):
     return engine
 
 
-def add_plugin(site_dir, name, command, command_md5, access_url,
+def add_plugin(name, command, command_md5, access_url,
                is_server=False, container_id=None, process_id=None):
-    engine = init_db(site_dir)
+    engine = init_db()
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
     new_plugin = Plugin(name=name, command=command, command_md5=command_md5,
@@ -49,8 +50,8 @@ def add_plugin(site_dir, name, command, command_md5, access_url,
     session.close()
 
 
-def get_plugin(site_dir, command_md5):
-    engine = init_db(site_dir)
+def get_plugin(command_md5):
+    engine = init_db()
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
     plugins = session.query(Plugin).filter(Plugin.command_md5 == command_md5).all()
@@ -61,8 +62,8 @@ def get_plugin(site_dir, command_md5):
         return False
 
 
-def delete_plugin(site_dir, command_md5):
-    engine = init_db(site_dir)
+def delete_plugin(command_md5):
+    engine = init_db()
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
     plugins = session.query(Plugin).filter(Plugin.command_md5 == command_md5).all()

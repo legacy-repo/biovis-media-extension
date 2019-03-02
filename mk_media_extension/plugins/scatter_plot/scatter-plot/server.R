@@ -14,8 +14,7 @@ threshold_line <- data.frame(slope = 0,
                              stroke_width = 2,
                              stroke_dasharray = "")
 
-function(input, output) {
-  
+shinyServer(function(input, output) {
   dataFunc <- reactive({
     data
   })
@@ -33,9 +32,23 @@ function(input, output) {
     if (is.null(col_var)) {
       colors$new <- c()
     }
+
+    col_var <- as.vector(col_var)
+    dataType <- 'all'
+    is.wholenumber <- function(x, tol = .Machine$double.eps^0.5)  abs(x - round(x)) < tol
+    if (all(unlist(lapply(col_var, is.character)))) {
+      dataType <- 'div'
+    } else if (all(unlist(lapply(col_var, is.wholenumber)))) {
+      dataType <- 'qual'
+    } else {
+      dataType <- 'seq'
+    }
+
     n <- length(unique(col_var))
     allChoices <- brewer.pal.info
-    availableChoices <- allChoices[allChoices$maxcolors > n,]
+
+    availableChoices <- allChoices[allChoices$maxcolors > n & allChoices$category == dataType,]
+
     if (dim(availableChoices)[1] != 0) {
       colorPal <- sample(rownames(availableChoices), size=1)
       colors$new <- brewer.pal(n, colorPal)
@@ -48,28 +61,44 @@ function(input, output) {
     colors$new <- c()
   })
 
+  observeEvent(input$showpanel, {
+    if(input$showpanel == TRUE) {
+      removeCssClass("main", "col-sm-12")
+      addCssClass("main", "col-sm-8")
+      shinyjs::show(id = "sidebar")
+      shinyjs::enable(id = "sidebar")
+    }
+    else {
+      removeCssClass("main", "col-sm-8")
+      addCssClass("main", "col-sm-12")
+      shinyjs::hide(id = "sidebar")
+    }
+  })
+
+
   output$scatterPlot <- renderScatterD3({
     col_var <- if (input$scatterD3_col == "None") NULL else dataFunc()[,input$scatterD3_col]
     symbol_var <- if (input$scatterD3_symbol == "None") NULL else dataFunc()[,input$scatterD3_symbol]
     size_var <- if (input$scatterD3_size == "None") NULL else dataFunc()[,input$scatterD3_size]
+    labels <- if (attrs$labelAttr == "None") NULL else dataFunc()[, attrs$labelAttr]
 
     scatterD3(
       x = dataFunc()[,input$scatterD3_x],
       y = dataFunc()[,input$scatterD3_y],
-      lab = dataFunc()[, "labelAttr"],
-      xlab = paste(as.vector(labels[input$scatterD3_x])),
-      ylab = paste(as.vector(labels[input$scatterD3_y])),
+      lab = labels,
+      xlab = input$scatterD3_x,
+      ylab = input$scatterD3_y,
       x_log = input$scatterD3_x_log,
       y_log = input$scatterD3_y_log,
       col_var = col_var,
       colors = colors$new,
-      col_lab = paste(as.vector(labels[input$scatterD3_col])),
+      col_lab = input$scatterD3_col,
       ellipses = input$scatterD3_ellipses,
       symbol_var = symbol_var,
-      symbol_lab = paste(as.vector(labels[input$scatterD3_symbol])),
+      symbol_lab = input$scatterD3_symbol,
       size_var = size_var,
-      size_lab = paste(as.vector(labels[input$scatterD3_size])),
-      url_var = paste0(attrs$queryURL, dataFunc()[, "labelAttr"]),
+      size_lab = input$scatterD3_size,
+      url_var = paste0(attrs$queryURL, labels),
       key_var = rownames(dataFunc()),
       point_opacity = input$scatterD3_opacity,
       labels_size = input$scatterD3_labsize,
@@ -81,4 +110,4 @@ function(input, output) {
       lasso_callback = "function(sel) {console.log(sel.data().map(function(d) {return d.lab}).join('\\n'));}"
     )
   })
-}
+})

@@ -40,7 +40,7 @@ shinyUI(fluidPage(
     # https://developers.google.com/chart/interactive/docs/gallery/bubblechart
     # for option documentation.
     options = list(
-      fontName = "Helvetica Neue",
+      fontName = "Source Sans Pro",
       fontSize = 13,
       # Set axis labels and ranges
       hAxis = list(

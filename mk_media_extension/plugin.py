@@ -430,19 +430,38 @@ class BasePlugin:
         output_dir = os.path.join(self._get_dest_dir('html'), get_candidate_name())
         check_dir(output_dir, skip=True, force=True)
         multiqc_cmd = ['multiqc', analysis_dir, '-o', output_dir]
-        try:
-            process = Popen(multiqc_cmd, stdout=PIPE)
-            while process.poll() is None:
-                output = process.stdout.readline()
-                if output == '' and process.poll() is not None:
-                    break
-                self.logger.info(output.strip())
-                sys.stdout.flush()
-                process.poll()
-            return output_dir
-        except CalledProcessError as e:
-            self.logger.critical(e)
-            return None
+        # write metadata to plugin.db
+        metadata = {}
+        metadata['name'] = self.plugin_name
+        metadata['command'] = '@{}({})'.format(self.plugin_name, self._get_args(**self.context))
+        metadata['command_md5'] = self._md5(metadata['command'])
+        metadata['is_server'] = self.is_server
+        plugin = get_plugin(metadata['command_md5'])
+        if not plugin:
+            try:
+                process = Popen(multiqc_cmd, stdout=PIPE)
+                while process.poll() is None:
+                    output = process.stdout.readline()
+                    if output == '' and process.poll() is not None:
+                        break
+                    self.logger.info(output.strip())
+                    sys.stdout.flush()
+                    process.poll()
+
+                metadata['access_url'] = output_dir
+                add_plugin(**metadata)
+
+                self.logger.info("Running multiqc plugin (%s) successfully, "
+                                 "Output in %s.\n" % (self.plugin_name, output_dir))
+                return output_dir
+            except CalledProcessError as e:
+                self.logger.critical(e)
+                return None
+        else:
+            self.logger.info("Command doesn't changed, so skip it.")
+            self.logger.info("Running multiqc plugin (%s) successfully"
+                             "Output in %s.\n" % (self.plugin_name, plugin.access_url))
+            return plugin.access_url
 
     def bokeh(self):
         pass
@@ -490,7 +509,7 @@ class BasePlugin:
         metadata['command'] = '@{}({})'.format(self.plugin_name, self._get_args(**self.context))
         metadata['command_md5'] = self._md5(metadata['command'])
 
-        plugin = get_plugin(self.net_dir, metadata['command_md5'])
+        plugin = get_plugin(metadata['command_md5'])
         if not plugin:
             metadata['is_server'] = self.is_server
             container_id, access_url = self.docker()
@@ -503,12 +522,13 @@ class BasePlugin:
                 metadata['access_url'] = access_url
 
             if access_url:
-                add_plugin(self.net_dir, **metadata)
+                add_plugin(**metadata)
             self.logger.info("Launching plugin server(%s) successfully, Serving on %s.\n" % (self.plugin_name, access_url))
             return access_url
         else:
             self.logger.info("Command doesn't changed, so skip it.")
-            self.logger.info("Launching plugin server(%s) successfully, Serving on %s.\n" % (self.plugin_name, access_url))
+            self.logger.info("Launching plugin server(%s) successfully, "
+                             "Serving on %s.\n" % (self.plugin_name, plugin.access_url))
             return plugin.access_url
 
     def index_js_lst(self, js_lst):
@@ -645,7 +665,7 @@ class BasePlugin:
             iframe_tag = '<iframe src="{}" seamless frameborder="0" scrolling="no" class="iframe" \
                           name="{}" width="100%"></iframe>'
             iframe = iframe_tag.format(access_url, self.plugin_name)
-            resize_js = "<script>$('.iframe').iFrameResize([{log: true}]);</script>"
+            resize_js = "<script>$('.iframe').iFrameResize({log: false, checkOrigin: false});</script>"
             return [iframe, resize_js]
         else:
             rendered_lst = self.render(**self._context)

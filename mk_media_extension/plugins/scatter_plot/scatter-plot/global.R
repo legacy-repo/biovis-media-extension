@@ -15,44 +15,28 @@ getVector <- function(value) {
     return(as.vector(as.matrix(value)))
 }
 
-if (!as.vector(attributes$labelAttr) %in% colnames(rawData)) {
+if (is.null(attributes$labelAttr) || !as.vector(attributes$labelAttr) %in% colnames(rawData)) {
     rawData[as.vector(attributes$labelAttr)] <- rownames(rawData)
 }
 
-data <- rawData %>% rename(colorAttr=as.vector(attributes$colorAttr),
-                           nameAttr=as.vector(attributes$nameAttr),
-                           sizeAttr=as.vector(attributes$sizeAttr),
-                           xAxis=as.vector(attributes$xAxis),
-                           yAxis=as.vector(attributes$yAxis),
-                           labelAttr=as.vector(attributes$labelAttr))
-
+data <- rawData
 attrs <- list(
     title=getVector(attributes$title),
-    xTitle=getVector(attributes$xTitle),
-    yTitle=getVector(attributes$yTitle),
-    colorTitle=getVector(attributes$colorTitle),
-    nameTitle=getVector(attributes$nameTitle),
-    sizeTitle=getVector(attributes$sizeTitle),
     subtitle=getVector(attributes$subtitle),
-    text=getVector(attributes$text)
+    text=getVector(attributes$text),
+    queryURL=getVector(attributes$queryURL)
 )
 
-if (as.logical(as.vector(attributes$titleAsLabel))) {
-    labels <- list(
-        xAxis=getVector(attributes$xTitle),
-        yAxis=getVector(attributes$yTitle),
-        colorAttr=getVector(attributes$colorTitle),
-        nameAttr=getVector(attributes$nameTitle),
-        sizeAttr=getVector(attributes$sizeTitle),
-        queryURL=getVector(attributes$queryURL)
-    )
-} else {
-    labels <- list(
-        colorAttr=as.vector(attributes$colorAttr),
-        nameAttr=as.vector(attributes$nameAttr),
-        sizeAttr=as.vector(attributes$sizeAttr),
-        xAxis=as.vector(attributes$xAxis),
-        yAxis=as.vector(attributes$yAxis),
-        queryURL=getVector(attributes$queryURL)
-    )
+dataColnames <- colnames(data)
+for (col in c('xAxis', 'yAxis', 'colorAttr', 'nameAttr', 'sizeAttr', 'labelAttr')) {
+    colname <- getVector(attributes[col])
+    if (is.null(colname) || !(colname %in% dataColnames)) {
+        if (col == 'xAxis' || col == 'yAxis') {
+            stop("You must specify xAxis and yAxis in shiny.ini.")
+        } else {
+            attrs[col] <- 'None'
+        }
+    } else {
+        attrs[col] <- colname
+    }
 }
