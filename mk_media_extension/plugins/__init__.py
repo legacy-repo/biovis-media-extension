@@ -10,6 +10,7 @@ from .boxplot.boxplot import BoxplotPlugin
 from .pca.pca import PCAPlugin
 from .scatter_plot.scatter_plot import ScatterPlotPlugin
 from .bubble_plot.bubble_plot import BubblePlotPlugin
+from .heatmap.heatmap import HeatmapPlugin
 
 
 class PluginRegistry:
@@ -38,5 +39,6 @@ plugin_registry.register(BoxplotPlugin)
 plugin_registry.register(PCAPlugin)
 plugin_registry.register(ScatterPlotPlugin)
 plugin_registry.register(BubblePlotPlugin)
+plugin_registry.register(HeatmapPlugin)
 
 internal_plugins = plugin_registry.internal_plugins
