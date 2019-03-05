@@ -1,9 +1,10 @@
 .alert pre {
     background: unset;
     border: unset;
+    max-height: 300px;
+    height: 100%;
 }
 
 .alert {
-    height: 300px;
     overflow-y: scroll;
 }

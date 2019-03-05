@@ -148,12 +148,32 @@ class Code:
         plugin_name, plugin_kwargs = self._parse()
         # Run convertor and get new plugin kwargs as context.
         context = self._convert_context(plugin_kwargs)
-        plugin = self.load_plugin(plugin_name, context)
         # e.g. ["<script id='plot' src=''>", "</script>"]
         try:
+            plugin = self.load_plugin(plugin_name, context)
             code_lst = plugin.run()
         except Exception as err:
-            code_lst = ['<p>Error: for more information, please check logs.</p>']
+            kwargs_str = ', '.join('%s=%r' % x for x in plugin_kwargs.items())
+            code = """\
+<div class='alert {class_name}' role='alert'>
+```text
+Error: for more information, please check logs as follows.
+
+{err}
+
+Plugin:
+{plugin_name}
+
+Arguments:
+{plugin_kwargs}
+
+Context:
+{context}
+```
+</div>""".format(class_name='alert-danger', err=str(err),
+                 plugin_name=plugin_name, plugin_kwargs=kwargs_str,
+                 context=str(context))
+            code_lst = [code, ]
             self.logger.warning("Generate code for %s error: %s" % (plugin_name, str(err)))
         return code_lst
 
