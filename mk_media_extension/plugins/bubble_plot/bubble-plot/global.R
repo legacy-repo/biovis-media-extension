@@ -12,7 +12,11 @@ if (dataConfig$dataType == 'rds') {
 }
 
 getVector <- function(value) {
-    return(as.vector(as.matrix(value)))
+    if (!is.null(value)) {
+        return(as.vector(as.matrix(value)))
+    } else {
+        return(NULL)
+    }
 }
 
 if (!as.vector(attributes$sizeAttr) %in% colnames(rawData)) {

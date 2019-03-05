@@ -12,11 +12,19 @@ if (dataConfig$dataType == 'rds') {
 }
 
 getVector <- function(value) {
-    return(as.vector(as.matrix(value)))
+    if (!is.null(value)) {
+        return(as.vector(as.matrix(value)))
+    } else {
+        return(NULL)
+    }
 }
 
 getBool <- function(value) {
-    return(as.logical(as.vector(as.matrix(value))))
+    if (!is.null(value)) {
+        return(as.logical(as.vector(as.matrix(value))))
+    } else {
+        return(FALSE)
+    }
 }
 
 data <- rawData

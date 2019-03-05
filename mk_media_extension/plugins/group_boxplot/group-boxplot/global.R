@@ -28,11 +28,13 @@ attrs <- list(
     title=getVector(attributes$title),
     subtitle=getVector(attributes$subtitle),
     text=getVector(attributes$text),
-    queryURL=getVector(attributes$queryURL)
+    queryURL=getVector(attributes$queryURL),
+    xTitle=getVector(attributes$xTitle),
+    yTitle=getVector(attributes$yTitle)
 )
 
 dataColnames <- colnames(data)
-for (col in c('xAxis', 'yAxis', 'colorAttr', 'nameAttr', 'sizeAttr', 'labelAttr')) {
+for (col in c('xAxis', 'yAxis', 'colorAttr', 'labelAttr')) {
     colname <- getVector(attributes[col])
     if (is.null(colname) || !(colname %in% dataColnames)) {
         if (col == 'xAxis' || col == 'yAxis') {

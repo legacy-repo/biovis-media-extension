@@ -12,7 +12,7 @@ shinyUI(fluidPage(
     tags$style("
       .chart-title-area {margin: 20px; width: 100%;}
       .chart-title-area .title {display: flex; justify-content: center; font-size: 16px;}
-      .chart-title-area .content {margin-left: 70px;}
+      .chart-title-area .content {margin-left: 70px; overflow: visible;}
       #main {display: flex; flex-direction: column; align-items: flex-end;}
       #showpanel {width: 120px; margin-bottom: 10px; background-color: #f5f5f5; box-shadow: none;}
     "),
