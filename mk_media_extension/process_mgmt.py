@@ -7,20 +7,22 @@ import psutil
 import signal
 import logging
 import subprocess
+from mk_media_extension import config
 from mk_media_extension.utils import get_candidate_name, check_dir, copy_and_overwrite
 
 
 class Process:
-    def __init__(self, command_dir, main_program_name='run.sh'):
+    def __init__(self, command_dir=None, main_program_name='run.sh'):
         self.logger = logging.getLogger('choppy-media-extension.process_mgmt.Process')
-        self.command_dir = command_dir
-        command_dirname = os.path.basename(command_dir)
-        self.workdir = os.path.join('/tmp/choppy-media-extension',
-                                    '%s_%s' % (command_dirname, get_candidate_name()))
-        self.main_program = os.path.join(self.workdir, main_program_name)
-        self.logger.debug('Main program: %s' % self.main_program)
-        self.logger.debug('Command directory: %s' % self.command_dir)
-        self.logger.debug('Working directory: %s' % self.workdir)
+        if command_dir:
+            self.command_dir = command_dir
+            command_dirname = os.path.basename(command_dir)
+            self.workdir = os.path.join(config.plugin_cache_dir,
+                                        '%s_%s' % (command_dirname, get_candidate_name()))
+            self.main_program = os.path.join(self.workdir, main_program_name)
+            self.logger.debug('Main program: %s' % self.main_program)
+            self.logger.debug('Command directory: %s' % self.command_dir)
+            self.logger.debug('Working directory: %s' % self.workdir)
 
     def _find_file(self, directory, file_pattern):
         all_files = []
@@ -68,7 +70,7 @@ class Process:
         self._set_env()
         self._gen_config(self.workdir, **kwargs)
         self._exist_command()
-        shell_cmd = [self.main_program, self.workdir, str(port)]
+        shell_cmd = [self.main_program, '-d', self.workdir, '-p', str(port)]
         self.logger.debug('Shell command: %s' % str(shell_cmd))
         with open(os.path.join(self.workdir, 'log'), 'w') as logfile:
             process = subprocess.Popen(shell_cmd, stdin=subprocess.PIPE,
@@ -108,21 +110,25 @@ class Process:
         if process:
             self.kill_proc_tree(process_id)
 
-    def kill_proc_tree(self, pid, sig=signal.SIGTERM, include_parent=True,
-                       timeout=None, on_terminate=None):
+    def kill_proc_tree(self, pid, sig=signal.SIGTERM, include_parent=False,
+                       timeout=3, on_terminate=None):
         """Kill a process tree (including grandchildren) with signal
         "sig" and return a (gone, still_alive) tuple.
         "on_terminate", if specified, is a callabck function which is
         called as soon as a child terminates.
         """
-        if pid == os.getpid():
-            raise RuntimeError("I refuse to kill myself")
         parent = psutil.Process(pid)
         children = parent.children(recursive=True)
         if include_parent:
             children.append(parent)
-        for p in children:
-            p.send_signal(sig)
-        gone, alive = psutil.wait_procs(children, timeout=timeout,
-                                        callback=on_terminate)
-        return (gone, alive)
+        children_pids = [child.pid for child in children]
+        self.logger.info('Kill process: %s and all children %s' % (pid, children_pids))
+        try:
+            for p in children:
+                p.send_signal(sig)
+            gone, alive = psutil.wait_procs(children, timeout=timeout,
+                                            callback=on_terminate)
+            return (gone, alive)
+        except Exception as err:
+            self.logger.debug('Kill all processes: %s' % str(err))
+            return (None, None)

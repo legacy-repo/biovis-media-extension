@@ -1,0 +1,9 @@
+.alert pre {
+    background: unset;
+    border: unset;
+}
+
+.alert {
+    height: 300px;
+    overflow-y: scroll;
+}

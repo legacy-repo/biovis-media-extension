@@ -17,7 +17,9 @@ if __name__ == "__main__":
 
     # @igv-viewer()
 
-    @test-shiny-plugin()
+    @heatmap()
+
+    @scatter-plot(dataFile='')
     '''
 
     text_lst = [text, ]

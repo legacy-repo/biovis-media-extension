@@ -16,6 +16,7 @@ from mk_media_extension.utils import (check_dir, copy_and_overwrite,
                                       BashColors, get_candidate_name,
                                       find_free_port)
 from mk_media_extension.file_mgmt import run_copy_files, get_oss_fsize
+from mk_media_extension.request_mgmt import requests_retry_session
 
 
 class BasePlugin:
@@ -33,7 +34,8 @@ class BasePlugin:
     docker_image = None
     plugin_dir = None
 
-    def __init__(self, context, net_dir=None, sync_oss=True, sync_http=True, sync_ftp=True, target_fsize=10):
+    def __init__(self, context, net_dir=None, sync_oss=True,
+                 sync_http=True, sync_ftp=True, target_fsize=10):
         """
         Initialize BasePlugin class.
 
@@ -44,14 +46,15 @@ class BasePlugin:
         :param: sync_ftp: whether sync ftp.
         :param: file_size: file size(MB).
         """
+        self.logger = logging.getLogger('choppy.mk-media-extension.plugin')
         if net_dir:
             temp_dir = os.path.join(net_dir, '.choppy-media-extension')
         else:
             temp_dir = os.path.join('/tmp', 'choppy-media-extension')
+            self.logger.warn("No net_dir, so use temp directory(%s)." % temp_dir)
             # Clean up the temp directory
             # TODO: rmtree will cause other choppy process failed, how to solve it?
             shutil.rmtree(temp_dir, ignore_errors=True)
-        self.logger = logging.getLogger(__name__)
         self.net_dir = net_dir
         self.sync_oss = sync_oss
         self.sync_http = sync_http
@@ -489,9 +492,9 @@ class BasePlugin:
                 port = find_free_port()
                 process_id = process.run_command(port=port, **self.context)
                 access_url = 'http://127.0.0.1:%s' % port
-                return process_id, access_url
+                return process_id, access_url, process.workdir
             else:
-                return None, None
+                return None, None, None
 
     def _md5(self, string):
         md5 = hashlib.md5()
@@ -516,20 +519,23 @@ class BasePlugin:
             if container_id and access_url:
                 metadata['container_id'] = container_id
                 metadata['access_url'] = access_url
+                # TODO: add workdir for a docker container
+                # metadata['workdir'] = workdir
             else:
-                process_id, access_url = self.server()
+                process_id, access_url, workdir = self.server()
                 metadata['process_id'] = process_id
                 metadata['access_url'] = access_url
+                metadata['workdir'] = workdir
 
             if access_url:
                 add_plugin(**metadata)
             self.logger.info("Launching plugin server(%s) successfully, Serving on %s.\n" % (self.plugin_name, access_url))
-            return access_url
+            return access_url, workdir
         else:
             self.logger.info("Command doesn't changed, so skip it.")
             self.logger.info("Launching plugin server(%s) successfully, "
                              "Serving on %s.\n" % (self.plugin_name, plugin.access_url))
-            return plugin.access_url
+            return plugin.access_url, plugin.workdir
 
     def index_js_lst(self, js_lst):
         javascript = self._get_index_lst(js_lst, 'js')
@@ -541,7 +547,8 @@ class BasePlugin:
             net_path_lst.append(self.get_net_path(item.get('key')))
         return net_path_lst
 
-    def autogen_js(self, required_js_lst, func_name, *args, div_id=None, configs=None, html_components=None):
+    def autogen_js(self, required_js_lst, func_name, *args, div_id=None,
+                   configs=None, html_components=None):
         """
         Plugin Helper: Auto generate javascript code by function arguments.
         """
@@ -650,6 +657,34 @@ class BasePlugin:
         """
         pass
 
+    def get_error_log(self, msg=None, logfile=None, msg_type='danger'):
+        error_type = {
+            'danger': 'alert-danger',
+            'warning': 'alert-warning',
+            'info': 'alert-info'
+        }
+
+        def render_code(msg):
+            code = """\
+<div class='alert {}' role='alert'>
+```text
+{}
+```
+</div>""".format(error_type.get(msg_type.lower(), 'alert-warning'), msg)
+            return code
+
+        if msg:
+            code = render_code(msg)
+        elif logfile and os.path.isfile(logfile):
+            with open(logfile, 'r') as f:
+                err_msg = f.read()
+                code = render_code(err_msg)
+        else:
+            msg = 'Unknown error: for more information, please contact app developer.'
+            code = render_code(msg)
+
+        return [code, ]
+
     def _wrapper_render(self):
         """
         Unpack context into keyword arguments of render method.
@@ -661,12 +696,28 @@ class BasePlugin:
             if not isinstance(rendered_lst, list):
                 raise NotImplementedError('Plugin does not yet support plotly framework.')
         elif self.is_server:
-            access_url = self._launch_server_plugin()
-            iframe_tag = '<iframe src="{}" seamless frameborder="0" scrolling="no" class="iframe" \
-                          name="{}" width="100%"></iframe>'
-            iframe = iframe_tag.format(access_url, self.plugin_name)
-            resize_js = "<script>$('.iframe').iFrameResize({log: false, checkOrigin: false});</script>"
-            return [iframe, resize_js]
+            access_url, workdir = self._launch_server_plugin()
+
+            if workdir:
+                logfile = os.path.join(workdir, 'log')
+            else:
+                logfile = ''
+
+            try:
+                response = requests_retry_session().get(access_url, timeout=5)
+            except Exception as err:
+                self.logger.debug('Try to launch plugin server: %s' % str(err))
+                rendered_lst = self.get_error_log(logfile=logfile)
+            else:
+                if response.status_code == 200:
+                    iframe_tag = '<iframe src="{}" seamless frameborder="0" \
+                                  scrolling="no" class="iframe" \
+                                  name="{}" width="100%"></iframe>'
+                    iframe = iframe_tag.format(access_url, self.plugin_name)
+                    resize_js = "<script>$('.iframe').iFrameResize({log: false, checkOrigin: false});</script>"
+                    rendered_lst = [iframe, resize_js]
+                else:
+                    rendered_lst = self.get_error_log(logfile=logfile)
         else:
             rendered_lst = self.render(**self._context)
             if not isinstance(rendered_lst, list):

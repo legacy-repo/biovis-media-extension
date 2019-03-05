@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 def run_copy_files(first_path, second_path, include=None, exclude=None, recursive=True, silent=False):  # noqa
-    output_dir = os.path.join(config.choppy_plugin_log, 'oss_outputs')
-    checkpoint_dir = os.path.join(config.choppy_plugin_log, 'oss_checkpoint')
+    output_dir = os.path.join(config.plugin_cache_dir, 'oss_outputs')
+    checkpoint_dir = os.path.join(config.plugin_cache_dir, 'oss_checkpoint')
 
     oss_bin = config.get_oss_bin()
     try:
