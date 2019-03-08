@@ -9,6 +9,7 @@ import requests
 import logging
 import collections
 import pkg_resources
+from mk_media_extension import config
 from mk_media_extension.models import add_plugin, get_plugin
 from mk_media_extension.docker_mgmt import Docker
 from mk_media_extension.process_mgmt import Process
@@ -479,7 +480,9 @@ class BasePlugin:
                 port = find_free_port()
                 docker_obj = docker.run_docker(self.docker_image, {}, ports={'3838/tcp': port})
                 id = docker_obj.id
-                access_url = 'http://127.0.0.1:%s' % port
+                access_url = '{protocol}://{domain}:{port}'.format(protocol=config.protocol,
+                                                                   domain=config.domain,
+                                                                   port=port)
                 return id, access_url
             else:
                 return None, None
@@ -491,7 +494,9 @@ class BasePlugin:
                 process = Process(src_code_dir)
                 port = find_free_port()
                 process_id = process.run_command(port=port, **self.context)
-                access_url = 'http://127.0.0.1:%s' % port
+                access_url = '{protocol}://{domain}:{port}'.format(protocol=config.protocol,
+                                                                   domain=config.domain,
+                                                                   port=port)
                 return process_id, access_url, process.workdir
             else:
                 return None, None, None

@@ -5,7 +5,7 @@ import os
 from mk_media_extension.plugin import BasePlugin
 
 
-class BoxplotPlugin(BasePlugin):
+class BoxplotPyPlugin(BasePlugin):
     """
     Boxplot plugin.
 

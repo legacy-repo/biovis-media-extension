@@ -70,7 +70,13 @@ class Process:
         self._set_env()
         self._gen_config(self.workdir, **kwargs)
         self._exist_command()
-        shell_cmd = [self.main_program, '-d', self.workdir, '-p', str(port)]
+
+        if config.domain != '127.0.0.1' or config.domain != 'localhost':
+            domain = '0.0.0.0'
+        else:
+            domain = '127.0.0.1'
+
+        shell_cmd = [self.main_program, '-d', self.workdir, '-p', str(port), '-H', domain]
         self.logger.debug('Shell command: %s' % str(shell_cmd))
         with open(os.path.join(self.workdir, 'log'), 'w') as logfile:
             process = subprocess.Popen(shell_cmd, stdin=subprocess.PIPE,

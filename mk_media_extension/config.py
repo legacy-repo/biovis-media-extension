@@ -48,11 +48,15 @@ if conf_path:
         plugin_cache_dir = os.path.expanduser(config.get('plugin', 'cache_dir'))
         plugin_db = os.path.expanduser(config.get('plugin', 'plugin_db'))
         clean_cache = config.getboolean('plugin', 'clean_cache')
+        protocol = config.get('plugin', 'protocol')
+        domain = config.get('plugin', 'domain')
     else:
         logger.warn('No plugin section in config file.')
         plugin_cache_dir = os.path.join('/tmp', 'choppy-media-extension')
         plugin_db = os.path.join('/tmp/choppy-media-extension', 'plugin.db')
         clean_cache = True
+        protocol = 'http'
+        domain = '127.0.0.1'
 
     logger.info('Create plugin_cache_dir: %s' % plugin_cache_dir)
     check_dir(plugin_cache_dir, skip=True)
