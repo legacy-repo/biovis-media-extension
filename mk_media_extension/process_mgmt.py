@@ -128,7 +128,7 @@ class Process:
         if include_parent:
             children.append(parent)
         children_pids = [child.pid for child in children]
-        self.logger.info('Kill process: %s and all children %s' % (pid, children_pids))
+        self.logger.debug('Kill process: %s and all children %s' % (pid, children_pids))
         try:
             for p in children:
                 p.send_signal(sig)

@@ -1,6 +1,8 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals
+
 import os
+import sys
 import re
 import uuid
 import shutil
@@ -20,6 +22,16 @@ from mk_media_extension.file_mgmt import run_copy_files, get_oss_fsize
 from mk_media_extension.request_mgmt import requests_retry_session
 
 
+class Reader:
+    def __init__(self, markdown_file):
+        self.markdown_file = markdown_file
+
+    def get_raw_content(self):
+        with open(self.markdown_file, 'r') as f:
+            content = f.read()
+            return(content)
+
+
 class BasePlugin:
     """
     Plugin class is initialized by plugin args from markdown.
@@ -33,7 +45,6 @@ class BasePlugin:
     5. multiqc mode
     """
     docker_image = None
-    plugin_dir = None
 
     def __init__(self, context, net_dir=None, sync_oss=True,
                  sync_http=True, sync_ftp=True, target_fsize=10):
@@ -96,6 +107,55 @@ class BasePlugin:
 
         # rendered js code
         self._rendered_js = []
+
+        # Set reader for README.md
+        self.reader = self.set_help()
+
+    @classmethod
+    def set_help(cls):
+        help_md_file = os.path.join(cls.plugin_dir, 'README.md')
+        if os.path.isfile(help_md_file):
+            reader = Reader(help_md_file)
+        else:
+            reader = None
+        return reader
+
+    @classmethod
+    def show_help(cls, ftype='markdown', output=''):
+        reader = cls.set_help()
+        if reader:
+            if ftype.lower() == 'markdown':
+                content = reader.get_raw_content()
+            elif ftype.lower() == 'pdf':
+                pass
+            elif ftype.lower() == 'html':
+                pass
+        else:
+            content = 'No manual entry for %s' % cls.plugin_name
+
+        if output:
+            with open(output, 'w') as f:
+                f.write(content)
+        else:
+            print(content)
+            sys.stdout.flush()
+
+    @classmethod
+    def show_version(cls):
+        import imp
+        version_file = os.path.join(cls.plugin_dir, 'version.py')
+        if os.path.join(version_file):
+            m = imp.load_source('version', version_file)
+            try:
+                print("%s %s" % (cls.plugin_name, m.get_version()))
+            except Exception:
+                print("Unknown version")
+        else:
+            print("Unknown version")
+
+    @property
+    def plugin_dir(self):
+        raise NotImplementedError('BasePlugin Subclass must override plugin_dir attribute.')
 
     @property
     def plugin_name(self):

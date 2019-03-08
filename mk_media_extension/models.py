@@ -95,7 +95,7 @@ def clean_at_exit():
         for plugin in plugins:
             msg = '\nClean cache and database record for plugin %s' % plugin.name
             color_msg = BashColors.get_color_msg('INFO', msg)
-            print(color_msg)
+            logger.debug(color_msg)
             if config.clean_cache:
                 workdir = plugin.workdir
                 shutil.rmtree(workdir, ignore_errors=True)
@@ -106,7 +106,7 @@ def clean_at_exit():
                 pass
 
             color_msg = BashColors.get_color_msg('SUCCESS', 'Clean successfully.')
-            print(color_msg)
+            logger.debug(color_msg)
 
     process = Process()
     atexit.register(process.clean_processs)
