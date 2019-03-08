@@ -49,7 +49,12 @@ shinyServer(function(input, output, session) {
         plotData$methodResultStr <- ''
         plotData$intercept <- NA
         plotData$slope <- NA
-      } else if (input$rocket_plot_method == 'linear_regression') {
+      }
+
+      if (input$rocket_plot_method == 'linear_regression') {
+        removeCssClass('rocket-plot-spinner', "hide-spinner")
+        addCssClass('rocket-plot-spinner', 'display-spinner')
+
         dataFilterLm <- lm(Y~X, dataFilterFunc())
         slope <- dataFilterLm$coefficients[2]
         intercept <- dataFilterLm$coefficients[1]
@@ -60,6 +65,9 @@ shinyServer(function(input, output, session) {
         plotData$intercept <- intercept
         plotData$slope <- slope
       } else if (input$rocket_plot_method == 'pearson_correlation') {
+        removeCssClass('rocket-plot-spinner', "hide-spinner")
+        addCssClass('rocket-plot-spinner', 'display-spinner')
+
         cor <- cor(dataFilterFunc()$X, dataFilterFunc()$Y)
         plotData$methodResultStr <- sprintf('Correlation=%.2f', cor)
         plotData$intercept <- 0
@@ -67,6 +75,8 @@ shinyServer(function(input, output, session) {
       }
       plotData$correlationPos <- c(max(dataFilterFunc()$X)*0.3,
                                    max(dataFilterFunc()$Y)*0.95)
+      removeCssClass('rocket-plot-spinner', 'display-spinner')
+      addCssClass('rocket-plot-spinner', "hide-spinner")
     }
   })
   

@@ -3,7 +3,6 @@ library(shinyBS)
 library(shinyjs)
 library(plotly)
 library(colourpicker)
-library(shinycssloaders)
 
 choices <- colnames(data)
 names(choices) <- colnames(data)
@@ -15,9 +14,87 @@ shinyUI(fluidPage(
       .chart-title-area {margin: 20px; width: 100%;}
       .chart-title-area .title {display: flex; justify-content: center; font-size: 16px;}
       .chart-title-area .content {margin-left: 70px; overflow: visible;}
+      .display-spinner {display: block;}
+      .hide-spinner {display: none;}
       #main {display: flex; flex-direction: column; align-items: flex-end;}
       #showpanel {width: 120px; margin-bottom: 10px; background-color: #f5f5f5; box-shadow: none;}
-      .load-container .loader {background-color: #ffffffcc !important;}
+
+      #rocket-plot-spinner .loader,
+      #rocket-plot-spinner .loader:before,
+      #rocket-plot-spinner .loader:after {
+        background: #00bbb7;
+        -webkit-animation: load1 1s infinite ease-in-out;
+        animation: load1 1s infinite ease-in-out;
+        width: 1em;
+        height: 4em;
+      }
+
+      #rocket-plot-spinner .loader {
+        color: #00bbb7;
+        text-indent: -9999em;
+        margin: 50% auto;
+        position: relative;
+        font-size: 11px;
+        -webkit-transform: translateZ(0);
+        -ms-transform: translateZ(0);
+        transform: translateZ(0);
+        -webkit-animation-delay: -0.16s;
+        animation-delay: -0.16s;
+      }
+
+      #rocket-plot-spinner .loader:before,
+      #rocket-plot-spinner .loader:after {
+        position: absolute;
+        top: 0;
+        content: '';
+      }
+
+      #rocket-plot-spinner .loader:before {
+        left: -1.5em;
+        -webkit-animation-delay: -0.32s;
+        animation-delay: -0.32s;
+      }
+
+      #rocket-plot-spinner .loader:after {
+        left: 1.5em;
+      }
+
+      @-webkit-keyframes load1 {
+        0%,
+        80%,
+        100% {
+          box-shadow: 0 0;
+          height: 4em;
+        }
+        40% {
+          box-shadow: 0 -2em;
+          height: 5em;
+        }
+      }
+
+      @keyframes load1 {
+        0%,
+        80%,
+        100% {
+          box-shadow: 0 0;
+          height: 4em;
+        }
+        40% {
+          box-shadow: 0 -2em;
+          height: 5em;
+        }
+      }
+
+      #rocket-plot-spinner {
+        background-color: #fffffff2;
+        position: absolute;
+        top: 40%;
+        width: 100%;
+        z-index: 100;
+        -webkit-transform: translateY(-50%);
+        transform: translateY(-50%);
+        overflow: hidden;
+      }
     "),
     tags$script(src="http://kancloud.nordata.cn/2019-02-27-iframeResizer.contentWindow.min.js",
                 type="text/javascript")
@@ -27,9 +104,11 @@ shinyUI(fluidPage(
       id='main',
       bsButton("showpanel", "Show/hide", icon=icon('far fa-chart-bar'),
                type = "toggle", value = TRUE),
-      withSpinner(plotlyOutput('rocketPlot', width = "100%", height = "700px"),
-                  type=getOption("spinner.type", default = 1),
-                  color.background="#ffffffcc"),
+      tags$div(
+        id="rocket-plot-spinner",
+        tags$div(id="rocket-plot-loader", class="loader", 'Loading')
+      ),
+      plotlyOutput('rocketPlot', width = "100%", height = "700px"),
       tags$div(
         class="chart-title-area",
         tags$h2(class="title", attrs$title),
