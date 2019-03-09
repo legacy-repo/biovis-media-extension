@@ -1,0 +1,13 @@
+yum install libgit2 libgit2-devel
+
+source("http://bioconductor.org/biocLite.R")
+
+# R-3.5.1
+biocLite("devtools")
+devtools::install_github("r-lib/later@v0.7.3")
+biocLite(c("configr", "dplyr", "shiny", "plotly", "ggpubr", "RColorBrewer", "shinyBS", "shinyjs", "shinydashboard", "ggvis", "ggplot2", "colourpicker"))
+
+devtools::install_github("jcheng5/googleCharts")
+devtools::install_github("hpeaker/ggcircos")
+devtools::install_github("rstudio/d3heatmap")
+devtools::install_github("juba/scatterD3")

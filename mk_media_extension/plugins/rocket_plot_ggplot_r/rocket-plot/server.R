@@ -19,6 +19,7 @@ shinyServer(function(input, output, session) {
                          "\nX: ", data[, input$rocket_plot_x],
                          "\nY: ", data[, input$rocket_plot_y])
     }
+
     return(data)
   })
 
@@ -115,11 +116,6 @@ shinyServer(function(input, output, session) {
             geom_point(size=input$rocket_plot_point_size, colour=input$rocket_plot_color,
                        alpha=attrs$pointAlpha) + 
             coord_fixed(ratio=1) +
-            geom_text(label=plotData$methodResultStr,
-                      x=plotData$correlationPos[1],
-                      y=plotData$correlationPos[2],
-                      size=4,
-                      color='gray20') + 
             labs(x=attrs$xTitle, y=attrs$yTitle) +
             theme(axis.text.x=element_text(angle=angle, hjust=1,
                                            size=input$rocket_plot_xyl_labelsize),
@@ -130,7 +126,12 @@ shinyServer(function(input, output, session) {
                   panel.background=element_rect(fill = "white"),
                   axis.line=element_line(colour='black'))
 
-      ggplotly(p, tooltip="text") %>% layout(autosize=TRUE)
+      (ggplotly(p, tooltip="text") %>%
+       layout(autosize=TRUE,
+              annotations=list(text=plotData$methodResultStr, 
+                               x=plotData$correlationPos[1],
+                               y=plotData$correlationPos[2],
+                               showarrow=FALSE )))
     })
   })
 })
