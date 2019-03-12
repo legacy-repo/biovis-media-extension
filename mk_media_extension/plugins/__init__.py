@@ -16,6 +16,7 @@ from .heatmap_ggplot.heatmap import HeatmapGgplotPlugin
 from .group_boxplot.group_boxplot import GroupBoxPlotPlugin
 from .density_plot.density_plot import DensityPlotPlugin
 from .rocket_plot_ggplot_r.rocket_plot import RocketPlotPlugin
+from .stack_barplot_r.stack_barplot import StackBarPlotPlugin
 
 
 class PluginRegistry:
@@ -50,5 +51,6 @@ plugin_registry.register(HeatmapGgplotPlugin)
 plugin_registry.register(GroupBoxPlotPlugin)
 plugin_registry.register(DensityPlotPlugin)
 plugin_registry.register(RocketPlotPlugin)
+plugin_registry.register(StackBarPlotPlugin)
 
 internal_plugins = plugin_registry.internal_plugins
