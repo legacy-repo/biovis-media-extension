@@ -27,9 +27,37 @@ class Reader:
         self.markdown_file = markdown_file
 
     def get_raw_content(self):
-        with open(self.markdown_file, 'r') as f:
-            content = f.read()
-            return(content)
+        warn_content = 'No manual entry, please contact the developer.'
+        if os.path.isfile(self.markdown_file):
+            with open(self.markdown_file, 'r') as f:
+                content = f.read()
+                if len(content) != 0:
+                    return content
+        return warn_content
+
+    def _render_html(self, help_doc):
+        from jinja2 import Environment, FileSystemLoader
+        template_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'templates')
+        env = Environment(loader=FileSystemLoader(template_dir))
+        template = env.get_template('help_doc_template.html')
+        return template.render(help_doc=help_doc)
+
+    def get_html(self):
+        from markdown import markdown
+
+        content = self.get_raw_content()
+        config = {
+            'pymdownx.inlinehilite': {
+                'style_plain_text': True
+            }
+        }
+        extensions = ['pymdownx.inlinehilite', 'admonition', 'def_list',
+                      'sane_lists', 'pymdownx.superfences',
+                      'pymdownx.highlight']
+        content_html = markdown(content, extensions=extensions,
+                                extension_configs=config)
+        html = self._render_html(content_html)
+        return html
 
 
 class BasePlugin:
@@ -122,14 +150,27 @@ class BasePlugin:
 
     @classmethod
     def show_help(cls, ftype='markdown', output=''):
+        """
+        :param: ftype: markdown, html, browser
+        """
         reader = cls.set_help()
         if reader:
             if ftype.lower() == 'markdown':
                 content = reader.get_raw_content()
-            elif ftype.lower() == 'pdf':
-                pass
             elif ftype.lower() == 'html':
-                pass
+                content = reader.get_html()
+            elif ftype == 'browser':
+                import webbrowser
+                import tempfile
+                content = reader.get_html()
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.html')
+                # Fix bug: TypeError: a bytes-like object is required, not 'str'
+                temp_file.write(content.encode())
+                temp_file.close()
+                webbrowser.open_new('file://%s' % temp_file.name)
+                # No output to save or flush.
+                print("Please check your browser for help doc.")
+                return
         else:
             content = 'No manual entry for %s' % cls.plugin_name
 

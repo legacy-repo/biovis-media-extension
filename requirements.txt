@@ -20,3 +20,4 @@ multiqc==1.7  # For multiqc plugin.
 sqlalchemy==1.2.18
 docker==3.7.0
 psutil==5.5.1
+pymdown-extensions==6.0

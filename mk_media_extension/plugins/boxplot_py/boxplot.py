@@ -12,7 +12,7 @@ class BoxplotPyPlugin(BasePlugin):
     :Example:
     @boxplot(csvFile='')
     """
-    plugin_name = 'boxplot'
+    plugin_name = 'boxplot-py'
     plugin_dir = os.path.dirname(os.path.abspath(__file__))
     is_server = False
 

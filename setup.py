@@ -31,6 +31,7 @@ setup(
         'idna==2.8',
         'Jinja2==2.10',
         'Markdown==3.0.1',
+        'pymdown-extensions==6.0',
         'MarkupSafe==1.1.0',
         'numpy==1.16.1',
         'packaging==19.0',
