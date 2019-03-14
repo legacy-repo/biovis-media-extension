@@ -12,7 +12,7 @@ from .pca.pca import PCAPlugin
 from .scatter_plot.scatter_plot import ScatterPlotPlugin
 from .bubble_plot.bubble_plot import BubblePlotPlugin
 from .heatmap_d3.heatmap import HeatmapD3Plugin
-from .heatmap_ggplot.heatmap import HeatmapGgplotPlugin
+from .heatmap_r.heatmap import HeatmapRPlugin
 from .group_boxplot.group_boxplot import GroupBoxPlotPlugin
 from .density_plot.density_plot import DensityPlotPlugin
 from .rocket_plot_ggplot_r.rocket_plot import RocketPlotPlugin
@@ -47,7 +47,7 @@ plugin_registry.register(PCAPlugin)
 plugin_registry.register(ScatterPlotPlugin)
 plugin_registry.register(BubblePlotPlugin)
 plugin_registry.register(HeatmapD3Plugin)
-plugin_registry.register(HeatmapGgplotPlugin)
+plugin_registry.register(HeatmapRPlugin)
 plugin_registry.register(GroupBoxPlotPlugin)
 plugin_registry.register(DensityPlotPlugin)
 plugin_registry.register(RocketPlotPlugin)

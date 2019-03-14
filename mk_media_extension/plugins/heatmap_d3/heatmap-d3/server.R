@@ -6,23 +6,23 @@ library(RColorBrewer)
 shinyServer(function(input, output) {
   dataFunc <- reactive({
     if (input$d3heatmap_x_log) {
-      if (!is.null(input$d3heatmatp_x)) {
-        return(log2(data[, input$d3heatmatp_x]))
+      if (!is.null(input$d3heatmap_x)) {
+        return(log2(data[, input$d3heatmap_x]))
       } else {
         return(log2(data))
       }
     }
 
-    if (!is.null(input$d3heatmatp_x)) {
-      return(data[, input$d3heatmatp_x])
+    if (!is.null(input$d3heatmap_x)) {
+      return(data[, input$d3heatmap_x])
     } else {
       return(data)
     }
   })
 
   labRowFunc <- reactive({
-    if (input$d3heatmatp_labrow != 'None') {
-      return(as.vector(as.matrix(data[, input$d3heatmatp_labrow])))
+    if (input$d3heatmap_labrow != 'None') {
+      return(as.vector(as.matrix(data[, input$d3heatmap_labrow])))
     } else {
       return(rownames(data))
     }
@@ -69,9 +69,9 @@ shinyServer(function(input, output) {
       na.rm = input$d3heatmap_na_rm,
       labRow = labRowFunc(),
       labCol = labColFunc(),
-      colors = input$d3heatmatp_color,
-      cexRow = input$d3heatmatp_cex_row,
-      cexCol = input$d3heatmatp_cex_col,
+      colors = input$d3heatmap_color,
+      cexRow = input$d3heatmap_cex_row,
+      cexCol = input$d3heatmap_cex_col,
       width = plot$width
     )
   })

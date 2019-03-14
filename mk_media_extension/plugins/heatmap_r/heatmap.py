@@ -5,14 +5,14 @@ import os
 from mk_media_extension.plugin import BasePlugin
 
 
-class HeatmapGgplotPlugin(BasePlugin):
+class HeatmapRPlugin(BasePlugin):
     """
     Heatmap plugin for mk_media_extension.
 
     :Example:
-    @heatmap-ggplot()
+    @heatmap-r()
     """
-    plugin_name = 'heatmap-ggplot'
+    plugin_name = 'heatmap-r'
     plugin_dir = os.path.dirname(os.path.abspath(__file__))
     is_server = True
 

@@ -32,7 +32,7 @@ shinyUI(fluidPage(
     ),
     sidebarPanel(
       id = "sidebar",
-      selectInput("d3heatmatp_x", "Matrix variable:",
+      selectInput("d3heatmap_x", "Matrix variable:",
                   choices = choices,
                   multiple = TRUE,
                   selected = attrs$colNameLst),
@@ -43,14 +43,14 @@ shinyUI(fluidPage(
       selectInput("d3heatmap_scale", "Scale variable (if the values should be centered and scaled) :",
                   choices = c("none" = "none", "row" = "row", "column" = "column"),
                   selected = attrs$scale),
-      selectInput("d3heatmatp_labrow", "Labels for Row:",
+      selectInput("d3heatmap_labrow", "Labels for Row:",
                   choices = c("None" = "None", choices),
                   selected = attrs$labRow),
-      selectInput("d3heatmatp_color", "Color for heatmatp:",
+      selectInput("d3heatmap_color", "Color for heatmatp:",
                   choices = c("YlOrRd", "Blues"),
                   selected = "Blues"),
-      sliderInput("d3heatmatp_cex_row", "xAxis font size ratio (* 14) :", min = 0, max = 4, value = 1, step = 0.05),
-      sliderInput("d3heatmatp_cex_col", "yAxis font size ratio (* 14) :", min = 0, max = 4, value = 1, step = 0.05),
+      sliderInput("d3heatmap_cex_row", "xAxis font size ratio (* 14) :", min = 0, max = 4, value = 1, step = 0.05),
+      sliderInput("d3heatmap_cex_col", "yAxis font size ratio (* 14) :", min = 0, max = 4, value = 1, step = 0.05),
       tags$p(
         actionButton("d3heatmap-reset-zoom", 
                      HTML("<span class='glyphicon glyphicon-search' aria-hidden='true'></span> Reset Zoom"))
