@@ -19,16 +19,13 @@ getVector <- function(value) {
     }
 }
 
-if (is.null(attributes$labelAttr) || !as.vector(attributes$labelAttr) %in% colnames(rawData)) {
-    rawData[as.vector(attributes$labelAttr)] <- rownames(rawData)
-}
-
 data <- rawData
 attrs <- list(
     title=getVector(attributes$title),
     subtitle=getVector(attributes$subtitle),
     text=getVector(attributes$text),
-    queryURL=getVector(attributes$queryURL)
+    queryURL=getVector(attributes$queryURL),
+    fontSize=getVector(attributes$fontSize)
 )
 
 dataColnames <- colnames(data)

@@ -19,10 +19,6 @@ getVector <- function(value) {
     }
 }
 
-if (is.null(attributes$labelAttr) || !as.vector(attributes$labelAttr) %in% colnames(rawData)) {
-    rawData[as.vector(attributes$labelAttr)] <- rownames(rawData)
-}
-
 if (is.null(attributes$barPos) || !as.vector(attributes$barPos) %in% c('fill', 'dodge', 'stack')) {
     attributes$barPos <- 'fill'
 }

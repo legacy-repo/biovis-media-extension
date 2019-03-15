@@ -51,10 +51,10 @@ dataType = rds
 title =
 ; The column name from data frame for x axis attribute
 xAxis = group
-xTitle = Group
+xTitle =
 ; The column name from data frame for y axis attribute
 yAxis = value
-yTitle = Discordance
+yTitle =
 ; The column name from data frame for color attribute
 colorAttr = variable
 ; The column name from data frame for point label

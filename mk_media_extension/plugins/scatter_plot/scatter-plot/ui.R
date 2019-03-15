@@ -50,9 +50,8 @@ shinyUI(fluidPage(
       selectInput("scatterD3_size", "Size mapping variable :",
                   choices = c("None" = "None", choices),
                   selected = attrs$sizeAttr),
-      checkboxInput("scatterD3_threshold_line", "Arbitrary threshold line", value = FALSE),    
-      sliderInput("scatterD3_labsize", "Labels size :",
-                  min = 0, max = 25, value = 11),
+      checkboxInput("scatterD3_threshold_line", "Arbitrary threshold line", value = FALSE),
+      htmlOutput("labelSizeUI"),
       sliderInput("scatterD3_opacity", "Points opacity :", min = 0, max = 1, value = 1, step = 0.05),
       checkboxInput("scatterD3_transitions", "Use transitions", value = TRUE),
       tags$p(

@@ -40,11 +40,11 @@ dataType = rds
 title =
 ; The column name from data frame for x axis attribute
 xAxis = A.QI.1.1
-xTitle = A.QI.1.1
+xTitle =
 xAngle = 0
 ; The column name from data frame for y axis attribute
 yAxis = A.QI.1.3
-yTitle = A.QI.1.3
+yTitle =
 labelAttr = ID.miRNA
 ; query url
 queryURL = https://www.duckduckgo.com/?q=

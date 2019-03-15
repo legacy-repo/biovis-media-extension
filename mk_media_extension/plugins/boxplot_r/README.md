@@ -40,11 +40,11 @@ dataType = rds
 title =
 ; The column name from data frame for x axis attribute
 xAxis = DoubleBlind_0to24
-xTitle = DoubleBlind_0to24
+xTitle =
 xAngle = 90
 ; The column name from data frame for y axis attribute
 yAxis = HbA1c_DF24to0
-yTitle = HbA1c_DF24to0
+yTitle =
 ; The column name from data frame for color attribute
 colorAttr = DoubleBlind_0to24
 ; query url(unsupported in the current version.)

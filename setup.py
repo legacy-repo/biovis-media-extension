@@ -26,7 +26,7 @@ setup(
     install_requires=[
         'plotly==3.6.1',
         'bokeh==1.0.4',
-        'certifi==2018.11.29',
+        'certifi>=2018.11.29',
         'chardet==3.0.4',
         'idna==2.8',
         'Jinja2==2.10',

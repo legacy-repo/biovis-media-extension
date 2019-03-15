@@ -75,12 +75,20 @@ shinyServer(function(input, output) {
     }
   })
 
+  if(attrs$labelAttr != 'None') {
+    output$labelSizeUI <- renderUI({ 
+      sliderInput("scatterD3_labsize", "Labels size :",
+                  min = 0, max = 25, value = 11)
+    })
+  }
+
 
   output$scatterPlot <- renderScatterD3({
     col_var <- if (input$scatterD3_col == "None") NULL else dataFunc()[,input$scatterD3_col]
     symbol_var <- if (input$scatterD3_symbol == "None") NULL else dataFunc()[,input$scatterD3_symbol]
     size_var <- if (input$scatterD3_size == "None") NULL else dataFunc()[,input$scatterD3_size]
     labels <- if (attrs$labelAttr == "None") NULL else dataFunc()[, attrs$labelAttr]
+    labelSize <- if (is.null(input$scatterD3_labsize)) 11 else input$scatterD3_labsize
 
     scatterD3(
       x = dataFunc()[,input$scatterD3_x],
@@ -101,7 +109,9 @@ shinyServer(function(input, output) {
       url_var = paste0(attrs$queryURL, labels),
       key_var = rownames(dataFunc()),
       point_opacity = input$scatterD3_opacity,
-      labels_size = input$scatterD3_labsize,
+      labels_size = labelSize,
+      axes_font_size = paste0(attrs$fontSize, 'px'),
+      legend_font_size = paste0(attrs$fontSize, 'px'),
       transitions = input$scatterD3_transitions,
       left_margin = 90,
       lines = lines(),

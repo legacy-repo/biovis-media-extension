@@ -141,6 +141,8 @@ shinyUI(fluidPage(
       #                         "135" = "135",
       #                         "180" = "180"),
       #             selected = "60"),
+      sliderInput("lock_ratio", "Aspect ratio, expressed as y / x :",
+                  min=0.1, max=10, value=1, step=0.1),
       sliderInput("rocket_plot_point_size", "Point size :",
                   min=0.5, max=10, value=attrs$pointSize, step=0.1),
       sliderInput("rocket_plot_xyl_labelsize", "X&Y&Legend labels size :",

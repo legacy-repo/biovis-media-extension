@@ -40,7 +40,7 @@ dataType = rds
 title =
 ; The column name from data frame for x axis attribute
 xAxis = DoubleBlind_0to24
-xTitle = DoubleBlind_0to24
+xTitle =
 ; The column name from data frame for color attribute
 colorAttr = DoubleBlind_0to24
 ; query url(unsupported in the current version.)

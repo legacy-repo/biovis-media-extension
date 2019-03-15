@@ -15,10 +15,6 @@
 #     return(as.vector(as.matrix(value)))
 # }
 
-# if (is.null(attributes$labelAttr) || !as.vector(attributes$labelAttr) %in% colnames(rawData)) {
-#     rawData[as.vector(attributes$labelAttr)] <- rownames(rawData)
-# }
-
 # data <- rawData
 # attrs <- list(
 #     title=getVector(attributes$title),

@@ -106,6 +106,9 @@ shinyServer(function(input, output, session) {
       # angle <- as.integer(input$rocket_plot_x_angle)
       angle <- as.integer(attrs$xAngle)
       pal <- brewer.pal(8, 'Blues')
+
+      xTitle <- if(is.null(attrs$xTitle)) input$rocket_plot_x else attrs$xTitle
+      yTitle <- if(is.null(attrs$yTitle)) input$rocket_plot_y else attrs$yTitle
       
       # build graph with ggplot syntax
       p <- ggplot(dataFunc(), aes_string(x=input$rocket_plot_x,
@@ -115,8 +118,8 @@ shinyServer(function(input, output, session) {
                         color=pal[4], size=.6) +
             geom_point(size=input$rocket_plot_point_size, colour=input$rocket_plot_color,
                        alpha=attrs$pointAlpha) + 
-            coord_fixed(ratio=1) +
-            labs(x=attrs$xTitle, y=attrs$yTitle) +
+            coord_fixed(ratio=input$lock_ratio) +
+            labs(x=xTitle, y=yTitle) +
             theme(axis.text.x=element_text(angle=angle, hjust=1,
                                            size=input$rocket_plot_xyl_labelsize),
                   axis.text.y=element_text(size=input$rocket_plot_xyl_labelsize),

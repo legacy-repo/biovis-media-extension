@@ -64,6 +64,9 @@ shinyServer(function(input, output, session) {
     output$groupBoxplot <- renderPlotly({
       x_var <- dataFunc()[, input$group_boxplot_x]
       labels <- if (input$group_boxplot_x_labels == "None") rownames(x_var) else dataFunc()[, input$group_boxplot_x_labels]
+      xTitle <- if(is.null(attrs$xTitle)) input$group_boxplot_x else attrs$xTitle
+      yTitle <- if(is.null(attrs$yTitle)) input$group_boxplot_y else attrs$yTitle
+      legendTitle <- if(is.null(attrs$legendTitle)) input$group_boxplot_col else attrs$legendTitle
           
       # build graph with ggplot syntax
       p <- ggplot(dataFunc(),
@@ -77,7 +80,7 @@ shinyServer(function(input, output, session) {
                 axis.text.y=element_text(size=input$group_boxplot_y_labelsize),
                 legend.text=element_text(size=input$group_boxplot_legend_labelsize),
                 legend.position='right') +
-          labs(x=attrs$xTitle, y=attrs$yTitle, fill=attrs$legendTitle)
+          labs(x=xTitle, y=yTitle, fill=legendTitle)
       
       ggplotly(p) %>% layout(autosize=TRUE, boxmode = "group")
     })

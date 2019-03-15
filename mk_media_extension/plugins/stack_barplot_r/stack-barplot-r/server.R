@@ -87,13 +87,15 @@ shinyServer(function(input, output, session) {
       fill <- if(input$stack_barplot_label == 'None') NULL else input$stack_barplot_label
       fillVar <- unique(dataFunc()[, fill])
       colors <- if(is.null(plotAttr$colors)) getColors(length(fillVar)) else plotAttr$colors
+      xTitle <- if(is.null(attrs$xTitle)) input$stack_barplot_x else attrs$xTitle
+      yTitle <- if(is.null(attrs$yTitle)) input$stack_barplot_y else attrs$yTitle
 
       # build graph with ggplot syntax
       p <- ggplot(dataFunc(), aes_string(fill=fill,
                                          y=input$stack_barplot_y,
                                          x=input$stack_barplot_x)) + 
             geom_bar(stat="identity", position=input$stack_barplot_bar_pos) +
-            labs(x=attrs$xTitle, y=attrs$yTitle) +
+            labs(x=xTitle, y=yTitle) +
             theme(axis.text.x=element_text(angle=angle, hjust=1,
                                            size=input$stack_barplot_xyl_labelsize),
                   axis.text.y=element_text(size=input$stack_barplot_xyl_labelsize),
