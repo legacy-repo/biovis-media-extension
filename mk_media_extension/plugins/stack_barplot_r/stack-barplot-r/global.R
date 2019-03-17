@@ -19,6 +19,14 @@ getVector <- function(value) {
     }
 }
 
+getBool <- function(value) {
+    if (value %in% c('True', 'TRUE', 'T', '1')) {
+        return(TRUE)
+    } else {
+        return(FALSE)
+    }
+}
+
 if (is.null(attributes$barPos) || !as.vector(attributes$barPos) %in% c('fill', 'dodge', 'stack')) {
     attributes$barPos <- 'fill'
 }
@@ -32,7 +40,8 @@ attrs <- list(
     xTitle=getVector(attributes$xTitle),
     xAngle=getVector(attributes$xAngle),
     yTitle=getVector(attributes$yTitle),
-    barPos=getVector(attributes$barPos)
+    barPos=getVector(attributes$barPos),
+    showpanel=getBool(getVector(attributes$showpanel))
 )
 
 dataColnames <- colnames(data)

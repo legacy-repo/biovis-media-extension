@@ -51,5 +51,6 @@ attrs <- list(
     scale=scale,
     labRow=labRow,
     colNameLst=colNameLst,
-    queryURL=getVector(attributes$queryURL)
+    queryURL=getVector(attributes$queryURL),
+    showpanel=getBool(getVector(attributes$showpanel))
 )

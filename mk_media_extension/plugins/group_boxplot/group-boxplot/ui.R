@@ -23,7 +23,7 @@ shinyUI(fluidPage(
     mainPanel(
       id='main',
       bsButton("showpanel", "Show/hide", icon=icon('far fa-chart-bar'),
-               type = "toggle", value = TRUE),
+               type = "toggle", value = attrs$showpanel),
       plotlyOutput('groupBoxplot', width = "100%", height = "700px"),
       tags$div(
         class="chart-title-area",
@@ -42,16 +42,13 @@ shinyUI(fluidPage(
       selectInput("group_boxplot_col", "Color mapping variable :",
                   choices = choices,
                   selected = attrs$colorAttr),
+      htmlOutput("selectUI"),
       selectInput("group_boxplot_x_labels", "X labels mapping variable :",
                   choices = c("None" = "None", choices),
                   selected = attrs$labelAttr),
       sliderInput("group_boxplot_title_size", "X&Y Title size :",
                   min = 0, max = 25, value = 11),
-      sliderInput("group_boxplot_x_labelsize", "X labels size :",
-                  min = 0, max = 25, value = 11),
-      sliderInput("group_boxplot_y_labelsize", "Y labels size :",
-                  min = 0, max = 25, value = 11),
-      sliderInput("group_boxplot_legend_labelsize", "Legend labels size :",
+      sliderInput("group_boxplot_xyl_labelsize", "X&Y&Legend labels size :",
                   min = 0, max = 25, value = 11),
       tags$p(
         actionButton("group_boxplot-reset-zoom", 

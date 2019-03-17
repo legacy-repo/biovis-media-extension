@@ -19,6 +19,14 @@ getVector <- function(value) {
     }
 }
 
+getBool <- function(value) {
+    if (value %in% c('True', 'TRUE', 'T', '1')) {
+        return(TRUE)
+    } else {
+        return(FALSE)
+    }
+}
+
 data <- rawData
 attrs <- list(
     title=getVector(attributes$title),
@@ -27,7 +35,8 @@ attrs <- list(
     queryURL=getVector(attributes$queryURL),
     xTitle=getVector(attributes$xTitle),
     yTitle=getVector(attributes$yTitle),
-    fillEnable=getVector(attributes$fillEnable)
+    fillEnable=getVector(attributes$fillEnable),
+    showpanel=getBool(getVector(attributes$showpanel))
 )
 
 dataColnames <- colnames(data)

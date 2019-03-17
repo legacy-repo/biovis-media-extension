@@ -773,9 +773,9 @@ class BasePlugin:
         def render_code(msg):
             code = """\
 <div class='alert {}' role='alert'>
-```text
+<pre class="highlight"><code>
 {}
-```
+</pre></code>
 </div>""".format(error_type.get(msg_type.lower(), 'alert-warning'), msg)
             return code
 

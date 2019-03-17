@@ -103,7 +103,7 @@ shinyUI(fluidPage(
     mainPanel(
       id='main',
       bsButton("showpanel", "Show/hide", icon=icon('far fa-chart-bar'),
-               type = "toggle", value = TRUE),
+               type = "toggle", value = attrs$showpanel),
       tags$div(
         id="rocket-plot-spinner",
         tags$div(id="rocket-plot-loader", class="loader", 'Loading')

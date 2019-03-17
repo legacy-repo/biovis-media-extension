@@ -1,6 +1,7 @@
 library(shiny)
 # For more information, please see https://plot.ly/r/shinyapp-explore-diamonds/
 library(ggplot2)
+library(dplyr)
 library(plotly)
 library(RColorBrewer)
 
@@ -10,14 +11,37 @@ shinyServer(function(input, output, session) {
   cdata <- session$clientData
 
   dataFunc <- reactive({
-    data
+    return(data)
   })
 
-  colors <- reactiveValues(new = c())
+  if(attrs$enableSelector) {
+    genSelectors <- reactive({
+      # select var name to draw
+      varChoices <- unique(dataFunc()[, input$group_boxplot_col])
+      return(varChoices)
+    })
+
+    output$selectUI <- renderUI({ 
+      selectInput("group_boxplot_r_col_selectors", "Select variable name(s) :",
+                  genSelectors(), multiple=TRUE, selected=attrs$selectors)
+    })
+  }
+
+  observeEvent(input$group_boxplot_r_col_selectors, {
+    if(!is.null(input$group_boxplot_r_col_selectors) & !is.null(input$group_boxplot_col)) {
+      colVars <- dataFunc()[, input$group_boxplot_col]
+
+      plotAttr$data <- dataFunc() %>% filter(colVars %in% c(input$group_boxplot_r_col_selectors))
+    } else {
+      plotAttr$data <- dataFunc()
+    }
+  })
+
+  plotAttr <- reactiveValues(colors = c(), data = NULL)
   observeEvent(input$group_boxplot_change_color, {
-    col_var <- if (input$group_boxplot_col == "None") NULL else dataFunc()[,input$group_boxplot_col]
+    col_var <- if (input$group_boxplot_col == "None") NULL else plotAttr$data[,input$group_boxplot_col]
     if (is.null(col_var)) {
-      colors$new <- c()
+      plotAttr$colors <- c()
     }
 
     col_var <- as.vector(col_var)
@@ -38,14 +62,14 @@ shinyServer(function(input, output, session) {
 
     if (dim(availableChoices)[1] != 0) {
       colorPal <- sample(rownames(availableChoices), size=1)
-      colors$new <- brewer.pal(n, colorPal)
+      plotAttr$colors <- brewer.pal(n, colorPal)
     } else {
-      colors$new <- c()
+      plotAttr$colors <- c()
     }
   })
 
   observeEvent(input$group_boxplot_col, {
-    colors$new <- c()
+    plotAttr$colors <- c()
   })
 
   observeEvent(input$showpanel, {
@@ -62,24 +86,33 @@ shinyServer(function(input, output, session) {
     }
 
     output$groupBoxplot <- renderPlotly({
-      x_var <- dataFunc()[, input$group_boxplot_x]
-      labels <- if (input$group_boxplot_x_labels == "None") rownames(x_var) else dataFunc()[, input$group_boxplot_x_labels]
+      data <- if(is.null(plotAttr$data)) dataFunc() else plotAttr$data
+
+      # Fix bug: renew the data when user delete selectors
+      if(is.null(input$group_boxplot_r_col_selectors)) {
+        data <- dataFunc()
+      }
+
+      x_var <- data[, input$group_boxplot_x]
+      labels <- if(input$group_boxplot_x_labels == "None") rownames(x_var) else data[, input$group_boxplot_x_labels]
       xTitle <- if(is.null(attrs$xTitle)) input$group_boxplot_x else attrs$xTitle
       yTitle <- if(is.null(attrs$yTitle)) input$group_boxplot_y else attrs$yTitle
       legendTitle <- if(is.null(attrs$legendTitle)) input$group_boxplot_col else attrs$legendTitle
-          
+
       # build graph with ggplot syntax
-      p <- ggplot(dataFunc(),
+      p <- ggplot(data,
                   aes_string(x=input$group_boxplot_x,
                              y=input$group_boxplot_y,
                              fill=input$group_boxplot_col)) + 
           geom_boxplot() +
           scale_x_discrete(labels = levels(labels)) +
           theme(axis.title=element_text(size=input$group_boxplot_title_size),
-                axis.text.x=element_text(angle=60, hjust=1, size=input$group_boxplot_x_labelsize),
-                axis.text.y=element_text(size=input$group_boxplot_y_labelsize),
-                legend.text=element_text(size=input$group_boxplot_legend_labelsize),
-                legend.position='right') +
+                axis.text.x=element_text(angle=60, hjust=1, size=input$group_boxplot_xyl_labelsize),
+                axis.text.y=element_text(size=input$group_boxplot_xyl_labelsize),
+                legend.text=element_text(size=input$group_boxplot_xyl_labelsize),
+                legend.position='right', legend.title=element_blank(),
+                panel.background=element_rect(fill = "white"),
+                axis.line=element_line(colour='black')) +
           labs(x=xTitle, y=yTitle, fill=legendTitle)
       
       ggplotly(p) %>% layout(autosize=TRUE, boxmode = "group")

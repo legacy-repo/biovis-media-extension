@@ -23,7 +23,7 @@ shinyUI(fluidPage(
     mainPanel(
       id='main',
       bsButton("showpanel", "Show/hide", icon=icon('far fa-chart-bar'),
-               type = "toggle", value = TRUE),
+               type = "toggle", value = attrs$showpanel),
       plotOutput('boxplotR', width = "100%", height = "700px"),
       plotlyOutput('boxplotlyR', width = "100%", height = "700px"),
       tags$div(

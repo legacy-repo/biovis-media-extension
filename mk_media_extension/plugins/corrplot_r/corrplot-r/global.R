@@ -36,7 +36,8 @@ attrs <- list(
     yTitle=getVector(attributes$yTitle),
     subtitle=getVector(attributes$subtitle),
     text=getVector(attributes$text),
-    queryURL=getVector(attributes$queryURL)
+    queryURL=getVector(attributes$queryURL),
+    showpanel=getBool(getVector(attributes$showpanel))
 )
 
 dataColnames <- colnames(data)

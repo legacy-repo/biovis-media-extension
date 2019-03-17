@@ -24,7 +24,8 @@ shinyUI(fluidPage(
   sidebarLayout(
     mainPanel(
       id='main',
-      bsButton("showpanel", "Show/hide", icon=icon('far fa-chart-bar'), type = "toggle", value = TRUE),
+      bsButton("showpanel", "Show/hide", icon=icon('far fa-chart-bar'),
+               type = "toggle", value = attrs$showpanel),
       withSpinner(plotlyOutput("heatmapRPlot", height = "700px")),
       tags$div(
         class="chart-title-area",

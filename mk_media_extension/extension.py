@@ -156,7 +156,7 @@ class Code:
             kwargs_str = ', '.join('%s=%r' % x for x in plugin_kwargs.items())
             code = """\
 <div class='alert {class_name}' role='alert'>
-```text
+<pre><code>
 Error: for more information, please check logs as follows.
 
 {err}
@@ -169,7 +169,7 @@ Arguments:
 
 Context:
 {context}
-```
+</code></pre>
 </div>""".format(class_name='alert-danger', err=str(err),
                  plugin_name=plugin_name, plugin_kwargs=kwargs_str,
                  context=str(context))
@@ -251,7 +251,8 @@ class ChoppyPluginExtension(Extension):
         md.registerExtension(self)
 
         plugin_preprocessor = ChoppyPluginPreprocessor(md, self.getConfigs())
-        md.preprocessors.add('plugin_preprocessor', plugin_preprocessor, '<normalize_whitespace')
+        md.preprocessors.add('plugin_preprocessor', plugin_preprocessor,
+                             '<normalize_whitespace')
 
 
 # http://pythonhosted.org/Markdown/extensions/api.html#makeextension

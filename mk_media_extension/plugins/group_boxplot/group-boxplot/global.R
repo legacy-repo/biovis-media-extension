@@ -19,6 +19,18 @@ getVector <- function(value) {
     }
 }
 
+getBool <- function(value) {
+    if (value %in% c('True', 'TRUE', 'T', '1')) {
+        return(TRUE)
+    } else {
+        return(FALSE)
+    }
+}
+
+trim <- function (x) gsub("^\\s+|\\s+$", "", x)
+
+selectors <- getVector(attributes$selectors)
+
 data <- rawData
 attrs <- list(
     title=getVector(attributes$title),
@@ -26,7 +38,10 @@ attrs <- list(
     text=getVector(attributes$text),
     queryURL=getVector(attributes$queryURL),
     xTitle=getVector(attributes$xTitle),
-    yTitle=getVector(attributes$yTitle)
+    yTitle=getVector(attributes$yTitle),
+    showpanel=getBool(getVector(attributes$showpanel)),
+    enableSelector=getBool(getVector(attributes$enableSelector)),
+    selectors=if(is.null(selectors)) NULL else trim(unlist(strsplit(selectors, ',')))
 )
 
 dataColnames <- colnames(data)
