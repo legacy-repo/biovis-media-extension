@@ -654,7 +654,7 @@ class BasePlugin:
         return net_path_lst
 
     def autogen_js(self, required_js_lst, func_name, *args, div_id=None,
-                   configs=None, html_components=None):
+                   configs=None, html_components=None, position='prev'):
         """
         Plugin Helper: Auto generate javascript code by function arguments.
         """
@@ -664,8 +664,25 @@ class BasePlugin:
             div_id = 'plugin_' + get_candidate_name()
 
         if html_components:
-            div_component = '%s<div id="%s" class="%s choppy-plot-container">Loading...</div>'\
-                            % (html_components, div_id, self.plugin_name)
+            html_components_previous = ''
+            html_components_inner = ''
+            html_components_next = ''
+
+            if position == 'prev':
+                html_components_previous = html_components
+            elif position == 'inner':
+                html_components_inner = html_components
+            elif position == 'last':
+                html_components_next = html_components
+            else:
+                html_components_previous = html_components
+
+            div_component = '''{html_components_previous}<div id="{div_id}"
+ class="{plugin_name} choppy-plot-container">{html_components_inner}</div>
+ {html_components_next}'''.format(html_components_previous=html_components_previous,
+                                  div_id=div_id, plugin_name=self.plugin_name,
+                                  html_components_inner=html_components_inner,
+                                  html_components_next=html_components_next)
         else:
             div_component = '<div id="%s" class="%s choppy-plot-container">Loading...</div>'\
                             % (div_id, self.plugin_name)
@@ -681,6 +698,7 @@ class BasePlugin:
             func_args = json.dumps(args)
         else:
             func_args = json.dumps([div_id, configs, ])
+
         js_code = '<script>var loader = new Loader(); loader.require(%s,  function () { window.addEventListener("load", function() { var args = JSON.parse(\'%s\'); %s.apply(this, args);})});</script>' % (net_path_lst, func_args, func_name)
         codes = [div_component, ] + [js_code, ]
         self.logger.debug("Rendered js code(%s): %s" % (self.plugin_name, codes))
@@ -839,7 +857,6 @@ class BasePlugin:
         """
         self.prepare()
         code_lst = self._wrapper_render()
-        code_lst.append('<hr/>')
         return code_lst
 
     def _get_virtual_path(self, path):
