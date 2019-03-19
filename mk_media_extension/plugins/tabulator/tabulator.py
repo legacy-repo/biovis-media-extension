@@ -58,7 +58,11 @@ class Tabulator(BasePlugin):
                            <button class ="table-button" id ="download-csv"\
                            style="%s">Download CSV</button></div>' % style
         # The arguments of function 'Tabulator' are position paraments, all paraments are defined in tabulator-wrapper.js.
-        # Tabulator(div_id, configs, dataUrl)
-        codes = self.autogen_js(js_lst, 'TabulatorViewer', self.get_net_path('dataUrl'), kwargs.get('columnsType'),
+        # Tabulator(div_id, configs)
+        configs = {
+            "dataUrl": self.get_net_path('dataUrl'),
+            "columnsType": kwargs.get('columnsType')
+        }
+        codes = self.autogen_js(js_lst, 'TabulatorViewer', configs=configs,
                                 div_id=temp_div_id, html_components=html_components)
         return codes

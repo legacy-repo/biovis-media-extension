@@ -1,5 +1,5 @@
-function TabulatorViewer(divId, configs, dataUrl, columnsType) {
-    Papa.parse(dataUrl, {
+function TabulatorViewer(divId, configs) {
+    Papa.parse(configs.dataUrl, {
         download: true,
         header: true,
         dynamicTyping: true,
@@ -35,8 +35,8 @@ function TabulatorViewer(divId, configs, dataUrl, columnsType) {
                     {formatter:"rownum", align:"center"},
                 ]
                 for (var index in header) {
-                    if (columnsType != undefined && columnsType != null) {
-                        var type = columnsType[header[index]]
+                    if (configs.columnsType != undefined && configs.columnsType != null) {
+                        var type = configs.columnsType[header[index]]
                         var column = getColumn(header[index], type)
                     } else {
                         var column = getColumn(header[index], null)
@@ -56,32 +56,32 @@ function TabulatorViewer(divId, configs, dataUrl, columnsType) {
                 table.download("json", "data.json");
             });
         }
-    });  
-}
+    });
 
-function linkIcon(cell, formatterParams) {
-    return '<i class="fas fa-external-link-alt"></i>';
-};
-
-function getColumn(item, type) {
-    var column = {
-        title: item,
-        field: item,
-        align: 'center'
+    function linkIcon(cell, formatterParams) {
+        return '<i class="fas fa-external-link-alt"></i>';
+    };
+    
+    function getColumn(item, type) {
+        var column = {
+            title: item,
+            field: item,
+            align: 'center'
+        }
+    
+        if (type === 'text') {
+            column['formatter'] = "textarea"
+        } else if (type === 'bool') {
+            column['formatter'] = "tickCross"
+        } else if (type === 'link') {
+            column['formatter'] = function(cell, formatterParams) {return '<i class="fa fa-external-link fa-2x" aria-hidden="true"></i>';};
+            column['cellClick'] = function(e, cell){ window.open(cell.getRow().getData()[item], '_blank') }
+        } else if (type === 'star') {
+            column['formatter'] = "star"
+        } else if (type === 'progress') {
+            column['formatter'] = "progress"
+            column['formatterParams'] = {color: ["#00dd00", "orange", "rgb(255,0,0)"]}
+        }
+        return column
     }
-
-    if (type === 'text') {
-        column['formatter'] = "textarea"
-    } else if (type === 'bool') {
-        column['formatter'] = "tickCross"
-    } else if (type === 'link') {
-        column['formatter'] = function(cell, formatterParams) {return '<i class="fa fa-external-link fa-2x" aria-hidden="true"></i>';};
-        column['cellClick'] = function(e, cell){ window.open(cell.getRow().getData()[item], '_blank') }
-    } else if (type === 'star') {
-        column['formatter'] = "star"
-    } else if (type === 'progress') {
-        column['formatter'] = "progress"
-        column['formatterParams'] = {color: ["#00dd00", "orange", "rgb(255,0,0)"]}
-    }
-    return column
 }

@@ -5,6 +5,7 @@ import os
 import sys
 import re
 import uuid
+
 import shutil
 import hashlib
 import requests
@@ -95,13 +96,17 @@ class BasePlugin:
             # Clean up the temp directory
             # TODO: rmtree will cause other choppy process failed, how to solve it?
             shutil.rmtree(temp_dir, ignore_errors=True)
+
         self.net_dir = net_dir
         self.sync_oss = sync_oss
         self.sync_http = sync_http
         self.sync_ftp = sync_ftp
         self.target_fsize = target_fsize
         self.tmp_plugin_dir = os.path.join(temp_dir, str(uuid.uuid1()))
-        self.plugin_data_dir = os.path.join(self.tmp_plugin_dir, 'plugin')
+        # Fix bug: use plugin name as global dir name instead of random file name
+        #          for saving all files from a plugin.
+        self.plugin_data_dir = os.path.join(self.tmp_plugin_dir, self.plugin_name)
+        check_dir(self.plugin_data_dir, skip=True)
 
         self.ftype2dir = {
             'css': os.path.join(self.plugin_data_dir, 'css'),
@@ -400,8 +405,7 @@ class BasePlugin:
         matched = re.match(r'^(https|http|file|ftp|oss)://.*$', net_path)
         if matched:
             protocol = matched.groups()[0]
-            filename, file_extension = os.path.splitext(os.path.basename(path))
-            dest_filepath = os.path.join(dest_dir, '%s_%s%s' % (get_candidate_name(), filename, file_extension))
+            dest_filepath = os.path.join(dest_dir, os.path.basename(path))
 
             self.set_index(key, dest_filepath, ftype=ftype)
             if protocol == 'file':
@@ -452,12 +456,9 @@ class BasePlugin:
         if ftype not in ('css', 'js', 'javascript'):
             self.logger.warning('inject %s error, %s is not supported.' % (net_path, ftype))
         else:
-            if ftype == 'css':
-                script = "<script>window.webInject.css(window.location.origin + '/' + '%s', function(){console.log('%s injected.')})</script>" % (net_path, net_path)
-                self._rendered_js.append(script)
-            elif ftype == 'js' or ftype == 'javascript':
-                script = "<script>window.webInject.js(window.location.origin + '/' + '%s', function(){console.log('%s injected.')})</script>" % (net_path, net_path)
-                self._rendered_js.append(script)
+            # checkDeps is defined in load-script.js(see mkdocs theme)
+            script = "<script>checkDeps('%s', '%s', false)</script>" % (net_path, ftype)
+            self._rendered_js.append(script)
 
     def _get_index_lst(self, external_files, ftype):
         try:
@@ -488,7 +489,11 @@ class BasePlugin:
         for item in javascript:
             self.set_index(item.get('key'), item.get('value'), item.get('type'))
             self.logger.debug('index_db: %s, context: %s' % (self._index_db, self.context))
-            self.inject(self.get_net_path(item.get('key')), ftype='js')
+            net_path = self.get_net_path(item.get('key'))
+            _, file_ext = os.path.splitext(net_path)
+            # media files don't need to inject, e.g. images/tff
+            if file_ext == '.js' or file_ext == '.javascript':
+                self.inject(net_path, ftype='js')
 
     def set_default_static(self):
         default_css = os.path.join(os.path.dirname(__file__), 'static', 'default.css')
@@ -504,10 +509,16 @@ class BasePlugin:
     def _prepare_css(self):
         css = self._get_index_lst(self.external_css(), 'css')
 
-        # TODO: async加速?
+        # TODO:
+        # 1. async加速?
+        # 2. support to cache directory?
         for item in css:
             self.set_index(item.get('key'), item.get('value'), item.get('type'))
-            self.inject(self.get_net_path(item.get('key')), ftype='css')
+            net_path = self.get_net_path(item.get('key'))
+            _, file_ext = os.path.splitext(net_path)
+            # media files don't need to inject, e.g. images/tff
+            if file_ext == '.css':
+                self.inject(net_path, ftype='css')
 
         self.logger.debug('index_db: %s, context: %s, css: %s' % (self._index_db, self.context, css))
 
@@ -532,7 +543,7 @@ class BasePlugin:
         import sys
         from subprocess import CalledProcessError, PIPE, Popen
 
-        output_dir = os.path.join(self._get_dest_dir('html'), get_candidate_name())
+        output_dir = self._get_dest_dir('html')
         check_dir(output_dir, skip=True, force=True)
         multiqc_cmd = ['multiqc', analysis_dir, '-o', output_dir]
         # write metadata to plugin.db
@@ -672,7 +683,7 @@ class BasePlugin:
                 html_components_previous = html_components
             elif position == 'inner':
                 html_components_inner = html_components
-            elif position == 'last':
+            elif position == 'next':
                 html_components_next = html_components
             else:
                 html_components_previous = html_components
@@ -731,7 +742,7 @@ class BasePlugin:
 
             # Temporary directory
             dest_dir = self._get_dest_dir('js')
-            plot_js_path = os.path.join(dest_dir, 'bokeh_%s.js' % get_candidate_name())
+            plot_js_path = os.path.join(dest_dir, 'bokeh.js')
 
             # TODO: How to cache bokeh js?
             # js_files = ['bokeh-1.0.4.min.js', 'bokeh-gl-1.0.4.min.js', 'bokeh-tables-1.0.4.min.js',
@@ -758,7 +769,7 @@ class BasePlugin:
             from plotly.offline import plot, get_plotlyjs
             # Temporary directory
             dest_dir = self._get_dest_dir('js')
-            plot_js_path = os.path.join(dest_dir, 'bokeh_%s.js' % get_candidate_name())
+            plot_js_path = os.path.join(dest_dir, 'bokeh.js')
             plotly_js = get_plotlyjs()
 
             with open(plot_js_path, 'w') as f:

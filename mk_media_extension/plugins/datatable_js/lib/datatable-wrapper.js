@@ -57,21 +57,21 @@ function DataTableViewer(divId, configs) {
             //     });              
             // }
         }
-    });  
-}
+    });
 
-function linkIcon(cell, formatterParams) {
-    return '<i class="fas fa-external-link-alt"></i>';
-};
-
-function getColumn(header) {
-    var columns = []
-
-    for (var item of header) {
-        columns.push({
-            "title": item,
-            "name": item
-        })
+    function linkIcon(cell, formatterParams) {
+        return '<i class="fas fa-external-link-alt"></i>';
+    };
+    
+    function getColumn(header) {
+        var columns = []
+    
+        for (var item of header) {
+            columns.push({
+                "title": item,
+                "name": item
+            })
+        }
+        return columns
     }
-    return columns
 }

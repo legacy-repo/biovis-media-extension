@@ -18,6 +18,7 @@ from .density_plot.density_plot import DensityPlotPlugin
 from .rocket_plot_ggplot_r.rocket_plot import RocketPlotPlugin
 from .stack_barplot_r.stack_barplot import StackBarPlotPlugin
 from .datatable_js.datatable import DataTableJSPlugin
+from .pivot_table_js.pivot_table import PivotTableJSPlugin
 
 
 class PluginRegistry:
@@ -54,5 +55,6 @@ plugin_registry.register(DensityPlotPlugin)
 plugin_registry.register(RocketPlotPlugin)
 plugin_registry.register(StackBarPlotPlugin)
 plugin_registry.register(DataTableJSPlugin)
+plugin_registry.register(PivotTableJSPlugin)
 
 internal_plugins = plugin_registry.internal_plugins

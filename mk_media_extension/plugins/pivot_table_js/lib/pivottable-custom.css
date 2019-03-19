@@ -1,0 +1,43 @@
+.pivot-table-js {
+    display: flex;
+    flex-direction: column;
+    padding: 0px !important;
+}
+
+*[id^='wdr-tab-chart-'] span {
+    margin-left: 10px !important;
+    left: 10px !important;
+}
+
+*[id^='wdr-tab-chart-'] .wdr-svg-icon {
+    display: none;
+}
+
+.pivot-chart-suspend {
+    position: fixed !important;
+    bottom: 10px;
+    right: 10px;
+    width: 500px;
+}
+
+.pivot-chart-origin {
+    position: relative;
+}
+
+.pivot-chart-origin,
+.pivot-chart-suspend {
+    z-index: 11;
+    padding: 20px;
+    border: 1px solid #666;
+    border-radius: 5px;
+    background: #ffffff;
+    margin-top: 30px;
+    overflow-x: scroll;
+}
+
+.suspend-btn {
+    position: absolute;
+    left: 10px;
+    top: 5px;
+    cursor: pointer;
+}
