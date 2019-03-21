@@ -73,7 +73,7 @@ class PivotTableJSPlugin(BasePlugin):
         configs = {
             "dataUrl": self.get_net_path('dataUrl'),
             "enableLocal": kwargs.get('enableLocal'),
-            "tableId": table_id
+            "chartId": table_id
         }
         codes = self.autogen_js(js_lst, 'PivotTableViewer', configs=configs,
                                 div_id=temp_div_id, html_components=html_components,

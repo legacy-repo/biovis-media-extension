@@ -27,30 +27,30 @@ getBool <- function(value) {
     }
 }
 
+getInt <- function(value) {
+    if (!is.null(value)) {
+        int <- as.integer(as.vector(as.matrix(value)))
+        if (is.na(int)) {
+            int <- 0
+        }
+        return(int)
+    } else {
+        return(0)
+    }
+}
+
 data <- rawData
-
-scaleValue <- getVector(attributes$scale)
-scale <- if (scaleValue %in% c('row', 'column', 'none')) scaleValue else 'both'
-
-labRowValue <- getVector(attributes$labRow)
-labRow <- if (labRowValue %in% colnames(data)) labRowValue else rownames(data)
-
-colNameLstValue <- getVector(attributes$colNameLst)
-colNameLst <- unlist(strsplit(colNameLstValue, ','))
-
-colNameLst <- if (all(colNameLst %in% colnames(data))) colNameLst else NULL
 
 attrs <- list(
     title=getVector(attributes$title),
     subtitle=getVector(attributes$subtitle),
     text=getVector(attributes$text),
-    rowv=getBool(attributes$rowv),
-    colv=getBool(attributes$colv),
-    distMethod=getVector(attributes$distMethod),
-    hcMethod=getVector(attributes$hcMethod),
-    scale=scale,
-    labRow=labRow,
-    colNameLst=colNameLst,
     queryURL=getVector(attributes$queryURL),
-    showpanel=getBool(getVector(attributes$showpanel))
+    showpanel=getBool(getVector(attributes$showpanel)),
+    assignmentType=getVector(attributes$assignmentType),
+    showEmptyInterSec=getBool(getVector(attributes$showEmptyInterSec)),
+    showBarNumbers=getBool(getVector(attributes$showBarNumbers)),
+    setSort=getBool(getVector(attributes$setSort)),
+    nIntersects=getInt(getVector(attributes$nIntersects)),
+    assignmentType=getVector(attributes$nIntersects)
 )

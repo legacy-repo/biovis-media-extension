@@ -5,23 +5,26 @@
 .data-table-js {
     margin: unset;
     padding: unset;
+    font-size: 15px !important;
 }
 
-.dataTables_wrapper .dataTables_filter input {
+.data-table-js .dataTables_wrapper .dataTables_filter input {
     border-radius: 10px;
 }
 
-button.dt-button, div.dt-button, a.dt-button {
+.data-table-js button.dt-button,
+.data-table-js div.dt-button,
+.data-table-js a.dt-button {
     border-radius: 20px;
     width: 80px;
     padding: 4px;
     margin-right: 20px;
 }
 
-div.dt-button-collection .dt-button {
+.data-table-js div.dt-button-collection .dt-button {
     border-radius: 20px;
 }
 
-div.dt-buttons {
+.data-table-js div.dt-buttons {
     float: right;
 }

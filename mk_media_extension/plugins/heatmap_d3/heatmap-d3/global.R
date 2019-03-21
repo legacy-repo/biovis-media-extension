@@ -20,8 +20,8 @@ getVector <- function(value) {
 }
 
 getBool <- function(value) {
-    if (!is.null(value)) {
-        return(as.logical(as.vector(as.matrix(value))))
+    if (value %in% c('True', 'TRUE', 'T', '1')) {
+        return(TRUE)
     } else {
         return(FALSE)
     }

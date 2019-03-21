@@ -3,6 +3,7 @@
     border: unset;
     max-height: 300px;
     height: 100%;
+    margin: unset;
 }
 
 .alert {

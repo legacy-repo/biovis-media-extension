@@ -6,6 +6,9 @@ function PivotTableViewer(divId, configs) {
         return
     }
 
+    initSessionStorage()
+
+    // Initialize pivot table
     var pivot = new WebDataRocks({
         container: "#" + divId,
         beforetoolbarcreated: customizeToolbar,
@@ -15,71 +18,20 @@ function PivotTableViewer(divId, configs) {
                 filename: configs.dataUrl
             },
             localization: "http://kancloud.nordata.cn/2019-03-18-custom-en.json"
-        },
-        reportcomplete: function() {
-            var storage = window.sessionStorage;
-            chartType = storage.getItem("pivot-current-chart");
-            if (chartType == 'none') {
-                $('#' + configs.tableId).append("<div class='alert alert-info' role='alert' style='width: 100%; display: flex; margin-bottom: 0px; justify-content: center; align-items: center;'><pre class='highlight'><code>No Chart, you can choose a chart from Chart Options.</pre></code></div>");
-            } else if (chartType == 'barchart') {
-                createBarChart();
-            } else if (chartType == 'areaspline') {
-                createChart('areaspline');
-            } else if (chartType == 'arearange') {
-                createChart('arearange');
-            } else if (chartType == 'areasplinerange') {
-                createChart('areasplinerange')
-            } else if (chartType == 'area') {
-                createChart('area')
-            } else if (chartType == 'column') {
-                createChart('column')
-            } else if (chartType == 'bubble') {
-                createChart('bubble')
-            } else if (chartType == 'columnrange') {
-                createChart('columnrange')
-            } else if (chartType == 'errorbar') {
-                createChart('errorbar')
-            } else if (chartType == 'line') {
-                createChart('line')
-            } else if (chartType == 'funnel') {
-                createChart('funnel')
-            } else if (chartType == 'pie') {
-                createChart('pie')
-            } else if (chartType == 'polygon') {
-                createChart('polygon')
-            } else if (chartType == 'pyramid') {
-                createChart('pyramid')
-            } else if (chartType == 'scatter') {
-                createChart('scatter')
-            } else if (chartType == 'spline') {
-                createChart('spline')
-            } else if (chartType == 'waterfall') {
-                createChart('waterfall')
-            }
-
-            $('#' + configs.tableId).append('<div id="pivot-chart-btn" class="suspend-btn"><span class="fa" aria-hidden="true"></span></div>');
-            $('#' + configs.tableId).addClass('pivot-chart-origin');
-            $('#pivot-chart-btn span').addClass('fa-caret-right');
-    
-            $('#' + configs.tableId).on('click', '#pivot-chart-btn', function(e){
-                $('#' + configs.tableId).toggleClass('pivot-chart-suspend');
-                $('#pivot-chart-btn span').toggleClass('fa-close fa-caret-right');
-                var width = $('#' + configs.tableId).width();
-                var height = $('#' + configs.tableId).height();
-                console.log('height', height, 'width', width)
-                var charts = $('#' + configs.tableId).highcharts()
-                if (charts) {
-                    charts.setSize(width, height, doAnimation = true);
-                }
-            });
         }
     });
 
+    // Monitor sessionStorage and then redraw table
     const { session, subscribe } = brownies;
     subscribe(session, 'pivot-current-chart', function(chartType) {
         console.log("Change chart type to " + chartType)
+        var chart = $('#' + configs.chartId).highcharts()
+        if (chart) {
+            chart.destroy()
+        }
+
         if (chartType == 'none') {
-            $('#' + configs.tableId).append("<div class='alert alert-info' role='alert' style='width: 100%; display: flex; margin-bottom: 0px; justify-content: center; align-items: center;'><pre class='highlight'><code>No Chart, you can choose a chart from Chart Options.</pre></code></div>");
+            $('#' + configs.chartId).append("<div class='alert alert-info' role='alert' style='width: 100%; display: flex; margin-bottom: 0px; justify-content: center; align-items: center;'><pre class='highlight'><code>No Chart, you can choose a chart from Chart Options.</pre></code></div>");
         } else if (chartType == 'barchart') {
             createBarChart();
         } else if (chartType == 'areaspline') {
@@ -117,6 +69,39 @@ function PivotTableViewer(divId, configs) {
         }
     });
 
+
+    function initSessionStorage() {
+        var storage = window.sessionStorage;
+        storage.setItem("pivot-current-chart", "none");
+    }
+
+    function addSwitchBtn() {
+        // Readd button when change the pivot-chart.
+        $('#' + configs.chartId).off('click', '#pivot-chart-btn')
+
+        $('#' + configs.chartId).append('<div id="pivot-chart-btn" class="suspend-btn"><span class="fa" aria-hidden="true"></span></div>');
+
+        if($('#' + configs.chartId).hasClass("pivot-chart-suspend")) {
+            $('#pivot-chart-btn span').addClass('fa-close');
+        } else {
+            $('#pivot-chart-btn span').addClass('fa-caret-right');
+        }
+
+        $('#' + configs.chartId).addClass('pivot-chart-origin');
+
+        $('#' + configs.chartId).on('click', '#pivot-chart-btn', function(e){
+            $('#' + configs.chartId).toggleClass('pivot-chart-suspend');
+            $('#pivot-chart-btn span').toggleClass('fa-close fa-caret-right');
+            var width = $('#' + configs.chartId).width();
+            var height = $('#' + configs.chartId).height();
+            console.log('height', height, 'width', width)
+            var charts = $('#' + configs.chartId).highcharts()
+            if (charts) {
+                charts.setSize(width, height, doAnimation = true);
+            }
+        });
+    }
+
     function createChart(chartType) {
         pivot.highcharts.getData({
             // 'areaspline', 'arearange', 'areasplinerange', 'area',
@@ -124,11 +109,12 @@ function PivotTableViewer(divId, configs) {
             // 'pie', 'funnel', 'polygon', 'pyramid', 'scatter', 'spline'
             // 'waterfall'
             type: chartType
-        }, function(data) {
-            Highcharts.chart(configs.tableId, data);
-        }, function(data) {
-            Highcharts.chart(configs.tableId, data);
-        });
+        }, createAndUpdateChart, createAndUpdateChart);
+    }
+
+    function createAndUpdateChart(data, rawData) {
+        Highcharts.chart(configs.chartId, data);
+        addSwitchBtn();
     }
 
     function createBarChart() {
@@ -143,7 +129,8 @@ function PivotTableViewer(divId, configs) {
         data.tooltip = {
             pointFormat: pivot.highcharts.getPointYFormat(rawData.meta.formats[0])
         }
-        Highcharts.chart(configs.tableId, data);
+        Highcharts.chart(configs.chartId, data);
+        addSwitchBtn();
     }
 
     function customizeToolbar(toolbar) {

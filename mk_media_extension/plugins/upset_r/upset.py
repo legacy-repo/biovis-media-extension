@@ -5,14 +5,14 @@ import os
 from mk_media_extension.plugin import BasePlugin
 
 
-class RocketPlotPlugin(BasePlugin):
+class UpsetRPlugin(BasePlugin):
     """
-    Rocket plot plugin for mk_media_extension.
+    Upset plugin for mk_media_extension.
 
     :Example:
-    @rocket-plot-r()
+    @upset-r()
     """
-    plugin_name = 'rocket-plot-r'
+    plugin_name = 'upset-r'
     plugin_dir = os.path.dirname(os.path.abspath(__file__))
     is_server = True
 
