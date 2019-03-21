@@ -112,6 +112,8 @@ class BasePlugin:
             'css': os.path.join(self.plugin_data_dir, 'css'),
             'javascript': os.path.join(self.plugin_data_dir, 'js'),
             'js': os.path.join(self.plugin_data_dir, 'js'),
+            'image': os.path.join(self.plugin_data_dir, 'images'),
+            'font': os.path.join(self.plugin_data_dir, 'fonts'),
             'data': os.path.join(self.plugin_data_dir, 'data'),
             'context': os.path.join(self.plugin_data_dir, 'context'),
             'html': os.path.join(self.plugin_data_dir, 'html'),
@@ -143,6 +145,72 @@ class BasePlugin:
 
         # Set reader for README.md
         self.reader = self.set_help()
+
+    @classmethod
+    def get_ftype(cls, fext):
+        css_lst = ('css',)
+        js_lst = ('js', 'javascript')
+        image_lst = ('png', 'jpg', 'svg')
+        font_lst = ('eot', 'ttf', 'woff', 'woff2', 'otf')
+        data_lst = ('csv', 'rds', 'tsv')
+
+        if fext in css_lst or fext.upper() in css_lst:
+            return 'css'
+        elif fext in js_lst or fext.upper() in js_lst:
+            return 'js'
+        elif fext in image_lst or fext.upper() in image_lst:
+            return 'image'
+        elif fext in font_lst or fext.upper() in font_lst:
+            return 'font'
+        elif fext in data_lst or fext.upper() in data_lst:
+            return 'data'
+
+    def _find_files(self, directory, file_pattern=None, exclude_pattern=None):
+        all_files = []
+        for root, dirnames, filenames in os.walk(directory):
+            for filename in filenames:
+                if exclude_pattern and re.match(exclude_pattern, filename):
+                    continue
+
+                if file_pattern and re.match(file_pattern, filename):
+                    all_files.append(os.path.join(root, filename))
+
+                if file_pattern is None:
+                    all_files.append(os.path.join(root, filename))
+
+        return all_files
+
+    def _render_html(self, templ_dir, templ_file, cache=True, file_pattern=None,
+                     exclude_pattern=None, **render_kwargs):
+        from jinja2 import Environment, FileSystemLoader, contextfilter
+
+        if cache:
+            all_files = self._find_files(templ_dir, file_pattern=file_pattern,
+                                         exclude_pattern=exclude_pattern)
+            self.logger.debug('Get template files: %s' % str(all_files))
+            for file in all_files:
+                # e.g. css/bootstrap.min.css
+                key = file.replace(templ_dir, '').strip('/')
+                _, file_ext = os.path.splitext(key)
+                ftype = self.get_ftype(file_ext.strip('.'))
+                self.set_index(key, file, ftype=ftype)
+                net_path = self.get_net_path(key)
+                self.logger.debug("Cache %s" % net_path)
+
+        @contextfilter
+        def url_filter(context, value):
+            """ A Template filter to normalize URLs. """
+            # Need to add /, otherwise browser will add base url as a prefix.
+            # e.g. data-table-js/html/data-table-js/css/font-awesome.min.css
+            net_path = self.get_net_path(value)
+            self.logger.debug("Filter url %s to %s" % (value, net_path))
+            return net_path
+
+        template_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), templ_dir)
+        env = Environment(loader=FileSystemLoader(template_dir))
+        env.filters['url'] = url_filter
+        template = env.get_template(templ_file)
+        return template.render(**render_kwargs)
 
     @classmethod
     def set_help(cls):
@@ -409,6 +477,7 @@ class BasePlugin:
 
             self.set_index(key, dest_filepath, ftype=ftype)
             if protocol == 'file':
+                # TODO: May be copy_and_overwrite will make some mistakes.
                 copy_and_overwrite(path, dest_filepath, is_file=is_file)
             elif protocol == 'oss':
                 run_copy_files(path, dest_filepath, recursive=False, silent=True)
@@ -820,6 +889,35 @@ class BasePlugin:
 
         return [code, ]
 
+    def _gen_iframe(self, rendered_lst):
+        """
+        Render html template as a iframe.
+        """
+        import tempfile
+        templ_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                                 'templates/plugin')
+        templ_file = 'index.html'
+        plugin = {
+            "content": ''.join(rendered_lst)
+        }
+        self.logger.debug('Get template files from %s' % templ_dir)
+        html_content = self._render_html(templ_dir, templ_file, plugin=plugin,
+                                         exclude_pattern=r'.*index\.html',
+                                         cache=True)
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.html')
+        # Fix bug: TypeError: a bytes-like object is required, not 'str'
+        temp_file.write(html_content.encode())
+        temp_file.close()
+
+        # Don't worry it will be conflict with the same plugin in same page.
+        key = self.plugin_name
+        self.set_index(key, temp_file.name, ftype='html')
+        iframe_tag = '<iframe src="{}" seamless frameborder="0" \
+                      scrolling="no" class="iframe" \
+                      name="{}" width="100%"></iframe>'
+        iframe = iframe_tag.format(self.get_net_path(key), self.plugin_name)
+        return iframe
+
     def _wrapper_render(self):
         """
         Unpack context into keyword arguments of render method.
@@ -828,8 +926,14 @@ class BasePlugin:
         plotly_plot = self.plotly()  # noqa
         if bokeh_plot or plotly_plot:
             rendered_lst = self._transform(bokeh_plot=bokeh_plot, plotly_plot=plotly_plot)
+            rendered_lst += self._rendered_js
             if not isinstance(rendered_lst, list):
                 raise NotImplementedError('Plugin does not yet support plotly framework.')
+
+            if config.enableIframe:
+                iframe = self._gen_iframe(rendered_lst)
+                rendered_lst = [iframe, ]
+
         elif self.is_server:
             access_url, workdir = self._launch_server_plugin()
 
@@ -849,18 +953,22 @@ class BasePlugin:
                                   scrolling="no" class="iframe" \
                                   name="{}" width="100%"></iframe>'
                     iframe = iframe_tag.format(access_url, self.plugin_name)
-                    resize_js = "<script>$('.iframe').iFrameResize({log: false, checkOrigin: false});</script>"
-                    rendered_lst = [iframe, resize_js]
+                    rendered_lst = [iframe, ]
                 else:
                     rendered_lst = self.get_error_log(logfile=logfile)
         else:
             rendered_lst = self.render(**self._context)
+            rendered_lst += self._rendered_js
             if not isinstance(rendered_lst, list):
                 raise NotImplementedError('You need to implement render method.')
 
-        self._rendered_js.extend(rendered_lst)
-        self.logger.debug('Plugin %s inject js code: %s' % (self.plugin_name, self._rendered_js))
-        return self._rendered_js
+            if config.enableIframe:
+                iframe = self._gen_iframe(rendered_lst)
+                rendered_lst = [iframe, ]
+
+        self.logger.debug('Plugin %s inject js code: %s' %
+                          (self.plugin_name, rendered_lst))
+        return rendered_lst
 
     def run(self):
         """
@@ -872,15 +980,26 @@ class BasePlugin:
 
     def _get_virtual_path(self, path):
         virtual_path = path.replace(self.tmp_plugin_dir, '')
-        # To avoid invalid replace.
-        if virtual_path != path:
-            virtual_path = virtual_path.strip('/')
+        # May be the prefix is net_dir not tmp_plugin_dir
+        # When the user call self.get_net_path, the prefix of the path will be self.net_dir
+        # So need to add this code.
+        virtual_path = virtual_path.replace(self.net_dir, '').strip('/')
+        self.logger.debug('Raw path: %s, virtual_path: %s' %
+                          (path, virtual_path))
+        self.logger.debug('tmp_plugin_dir: %s, net_dir: %s' %
+                          (self.tmp_plugin_dir, self.net_dir))
 
         return virtual_path
 
-    def get_net_path(self, key):
+    def get_net_path(self, key, prefix='/'):
         """
         Get virtual network path for mkdocs server.
+        1. Copy files from temp directory to net directory.
+        2. Generate network path.
+
+        Some files can't be copied to network directory, If developer don't call get_net_path in the plugin.
+        So need to copy all needed files from temp directory to network directory manually.
+        e.g. images, fonts
         """
         record_idx = self.get_index(key)
         if record_idx >= 0:
@@ -892,12 +1011,12 @@ class BasePlugin:
                 dest_path = os.path.join(self.net_dir, virtual_path)
                 self.logger.debug("dest_path: %s" % dest_path)
                 check_dir(os.path.dirname(dest_path), skip=True, force=True)
-                copy_and_overwrite(file_path, dest_path, is_file=True)
+                copy_and_overwrite(file_path, dest_path, is_file=True, force_remove=False)
                 self.set_value_by_idx(record_idx, dest_path)
-                return virtual_path
+                return os.path.join(prefix, virtual_path)
             else:
                 # TODO: upload to qiniu and return a url.
-                return virtual_path
+                return os.path.join(prefix, virtual_path)
         else:
             self.logger.warning('No such key in index db: %s' % key)
 

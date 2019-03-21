@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 import os
 import shutil
+import logging
 import socket
 from contextlib import closing
 
@@ -10,6 +11,8 @@ import _thread
 _allocate_lock = _thread.allocate_lock
 _once_lock = _allocate_lock()
 _name_sequence = None
+
+logger = logging.getLogger(__name__)
 
 
 class BashColors:
@@ -45,17 +48,24 @@ class BashColors:
         print(cls._get_color(color_name) + msg + BashColors.ENDC)
 
 
-def copy_and_overwrite(from_path, to_path, is_file=False):
-    if os.path.isfile(to_path):
+def copy_and_overwrite(from_path, to_path, is_file=False, force_remove=True):
+    if os.path.isfile(to_path) and force_remove:
         os.remove(to_path)
+    else:
+        logger.debug('%s exists, please check!' % to_path)
 
-    if os.path.isdir(to_path):
+    if os.path.isdir(to_path) and force_remove:
         shutil.rmtree(to_path)
+    else:
+        logger.debug('%s exists, please check!' % to_path)
 
-    if is_file and os.path.isfile(from_path):
-        shutil.copy2(from_path, to_path)
-    elif os.path.isdir(from_path):
-        shutil.copytree(from_path, to_path)
+    try:
+        if is_file and os.path.isfile(from_path):
+            shutil.copy2(from_path, to_path)
+        elif os.path.isdir(from_path):
+            shutil.copytree(from_path, to_path)
+    except Exception as err:
+        logger.debug('Copy %s to %s error: %s' % (from_path, to_path, str(err)))
 
 
 def print_obj(str):

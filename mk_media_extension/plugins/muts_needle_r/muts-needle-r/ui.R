@@ -2,6 +2,7 @@ library(shiny)
 library(shinyBS)
 library(shinyjs)
 library(shinycssloaders)
+library(mutsneedle)
 library(plotly)
 
 choices <- colnames(data)

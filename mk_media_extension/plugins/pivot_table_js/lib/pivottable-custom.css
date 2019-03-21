@@ -46,3 +46,20 @@
 .pivot-chart-suspend #wdr-pivot-view span.wdr-ui-label {
     z-index: 10;
 }
+
+#wdr-tab-chart .wdr-dropdown-content span {
+    left: 20px !important;
+}
+
+.wdr-dropdown {
+    overflow: hidden;
+}
+
+#wdr-tab-chart .wdr-dropdown-content {
+    overflow: scroll;
+    height: 360px;
+}
+
+#wdr-tab-chart .wdr-dropdown-content::-webkit-scrollbar {
+    display: none;
+}

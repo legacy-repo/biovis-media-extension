@@ -153,6 +153,7 @@ class Code:
             plugin = self.load_plugin(plugin_name, context)
             code_lst = plugin.run()
         except Exception as err:
+            import traceback
             kwargs_str = ', '.join('%s=%r' % x for x in plugin_kwargs.items())
             code = """\
 <div class='alert {class_name}' role='alert'>
@@ -174,6 +175,8 @@ Context:
                  plugin_name=plugin_name, plugin_kwargs=kwargs_str,
                  context=str(context))
             code_lst = [code, ]
+            self.logger.debug("Generate code for %s error: %s" % (plugin_name, str(err)))
+            self.logger.debug(traceback.format_exc())
             self.logger.warning("Generate code for %s error: %s" % (plugin_name, str(err)))
         return code_lst
 
