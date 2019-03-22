@@ -36,8 +36,12 @@ function checkDeps(net_path, ftype, noInject) {
     }
   }
 
-  var full_net_path = window.location.origin + '/' + net_path
-  if (allFiles.indexOf(full_net_path) >= 0 || allFiles.indexOf(net_path) >= 0) {
+  // net_path: '/pivot-table-js/css/webdatarocks.min.css'
+  var full_net_path = window.location.origin + net_path
+  var another_net_path = window.location.origin + '/' + net_path
+  if (allFiles.indexOf(full_net_path) >= 0 ||
+      allFiles.indexOf(net_path) >= 0 ||
+      allFiles.indexOf(another_net_path) >= 0) {
       if (noInject) {
         return true
       } else {
@@ -65,8 +69,12 @@ Loader.prototype = {
 
     var injectedScript = []
     for (var i = 0; i < scripts.length; i++) {
-      if(this.writeScript(scripts[i])) {
-        console.log('Wrote ' + scripts[i] + 'successfully.')
+      // Check if the script exists.
+      if(checkDeps(scripts[i], ftype='js', noInject=true)) {
+        console.log(scripts[i] + ' exists.')
+      } else {
+        this.writeScript(scripts[i])
+        console.log('Wrote ' + scripts[i] + ' successfully.')
         injectedScript.push(scripts[i])
       }
     }

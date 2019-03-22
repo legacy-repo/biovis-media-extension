@@ -148,6 +148,9 @@ class BasePlugin:
 
     @classmethod
     def get_ftype(cls, fext):
+        """
+        Set supported file type.
+        """
         css_lst = ('css',)
         js_lst = ('js', 'javascript')
         image_lst = ('png', 'jpg', 'svg')
@@ -193,9 +196,11 @@ class BasePlugin:
                 key = file.replace(templ_dir, '').strip('/')
                 _, file_ext = os.path.splitext(key)
                 ftype = self.get_ftype(file_ext.strip('.'))
-                self.set_index(key, file, ftype=ftype)
-                net_path = self.get_net_path(key)
-                self.logger.debug("Cache %s" % net_path)
+                # Skip not supported file type.
+                if ftype:
+                    self.set_index(key, file, ftype=ftype)
+                    net_path = self.get_net_path(key)
+                    self.logger.debug("Cache %s" % net_path)
 
         @contextfilter
         def url_filter(context, value):
@@ -930,7 +935,7 @@ class BasePlugin:
             if not isinstance(rendered_lst, list):
                 raise NotImplementedError('Plugin does not yet support plotly framework.')
 
-            if config.enableIframe:
+            if config.enable_iframe:
                 iframe = self._gen_iframe(rendered_lst)
                 rendered_lst = [iframe, ]
 
@@ -962,7 +967,7 @@ class BasePlugin:
             if not isinstance(rendered_lst, list):
                 raise NotImplementedError('You need to implement render method.')
 
-            if config.enableIframe:
+            if config.enable_iframe:
                 iframe = self._gen_iframe(rendered_lst)
                 rendered_lst = [iframe, ]
 
