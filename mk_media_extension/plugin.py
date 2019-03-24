@@ -931,7 +931,7 @@ class BasePlugin:
         plotly_plot = self.plotly()  # noqa
         if bokeh_plot or plotly_plot:
             rendered_lst = self._transform(bokeh_plot=bokeh_plot, plotly_plot=plotly_plot)
-            rendered_lst += self._rendered_js
+            rendered_lst = self._rendered_js + rendered_lst
             if not isinstance(rendered_lst, list):
                 raise NotImplementedError('Plugin does not yet support plotly framework.')
 
@@ -963,7 +963,7 @@ class BasePlugin:
                     rendered_lst = self.get_error_log(logfile=logfile)
         else:
             rendered_lst = self.render(**self._context)
-            rendered_lst += self._rendered_js
+            rendered_lst = self._rendered_js + rendered_lst
             if not isinstance(rendered_lst, list):
                 raise NotImplementedError('You need to implement render method.')
 

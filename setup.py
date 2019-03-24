@@ -58,6 +58,8 @@ setup(
         'Programming Language :: Python :: 3',
     ],
     entry_points={
-        'markdown.extensions': ['mk_media_extension = mk_media_extension.extension:ChoppyPluginExtension']
+        'markdown.extensions': [
+            'mk_media_extension = mk_media_extension.extension:ChoppyPluginExtension'
+        ]
     }
 )
