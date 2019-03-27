@@ -1,0 +1,72 @@
+# {% set data = load_setup_py_data() %}
+{% set version = '0.1.0' %}
+{% set url = 'http://choppy.3steps.cn' %}
+{% set description = 'Display dynamic plot or more multimedia content in markdown.' %}
+
+package:
+  name: mk-media-extension
+  version: {{ version }}
+
+
+source:
+  - path: ../
+
+
+build:
+  include_recipe: True
+  entry_points:
+    - mk_media_extension = mk_media_extension.extension:ChoppyPluginExtension
+
+
+requirements:
+  build:
+    - python
+    - setuptools
+
+  run:
+    - python
+    - plotly
+    - bokeh
+    - Jinja2
+    - Markdown
+    - pyparsing
+    - requests
+    - multiqc
+    - sqlalchemy
+    - docker-py
+    - psutil
+    - r-devtools
+    - r-dplyr
+    - r-shiny
+    - r-plotly
+    - r-ggpubr
+    - r-rcolorbrewer
+    - r-shinybs
+    - r-shinyjs
+    - r-shinydashboard
+    - r-ggvis
+    - r-ggplot2
+    - r-colourpicker
+    - r-d3heatmap
+    # Choppy Channel
+    # - r-configr
+    # - r-scatterd3
+
+    # meta-package installs futures for 2.7 but not for 3.x
+    # needed in order to be able to build no-arch conda packages
+    - futures-compat
+
+# test:
+#   imports:
+#     - mk_media_extension
+
+about:
+  home: {{ url }}
+  license: BSD 3-Clause
+  license_file: LICENSE.md
+  license_family: BSD
+
+  summary: {{ description }}
+  description: {{ description }}
+  doc_url: http://docs.3steps.cn
+  dev_url: {{ url }}

@@ -47,6 +47,8 @@ shinyUI(fluidPage(
       selectInput("d3heatmap_labrow", "Labels for Row:",
                   choices = c("None" = "None", choices),
                   selected = attrs$labRow),
+      checkboxInput("d3heatmap_labcol", "Labels for Col",
+                    value = attrs$labCol),
       selectInput("d3heatmap_color", "Color for heatmatp:",
                   choices = c("YlOrRd", "Blues"),
                   selected = "Blues"),

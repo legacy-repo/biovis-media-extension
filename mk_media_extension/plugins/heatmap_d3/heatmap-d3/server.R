@@ -24,12 +24,16 @@ shinyServer(function(input, output) {
     if (input$d3heatmap_labrow != 'None') {
       return(as.vector(as.matrix(data[, input$d3heatmap_labrow])))
     } else {
-      return(rownames(data))
+      return(c())
     }
   })
 
   labColFunc <- reactive({
-    return(colnames(dataFunc()))
+    if (input$d3heatmap_labcol) {
+      return(colnames(dataFunc()))
+    } else {
+      return(c())
+    }
   })
 
   observeEvent(input[['d3heatmap-reset-zoom']], {

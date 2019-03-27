@@ -34,6 +34,7 @@ scale <- if (scaleValue %in% c('row', 'column', 'none')) scaleValue else 'both'
 
 labRowValue <- getVector(attributes$labRow)
 labRow <- if (labRowValue %in% colnames(data)) labRowValue else rownames(data)
+labCol <- getBool(getVector(attributes$labCol))
 
 colNameLstValue <- getVector(attributes$colNameLst)
 colNameLst <- unlist(strsplit(colNameLstValue, ','))
@@ -50,6 +51,7 @@ attrs <- list(
     hclustfun=getVector(attributes$hclustfun),
     scale=scale,
     labRow=labRow,
+    labCol=labCol,
     colNameLst=colNameLst,
     queryURL=getVector(attributes$queryURL),
     showpanel=getBool(getVector(attributes$showpanel))
