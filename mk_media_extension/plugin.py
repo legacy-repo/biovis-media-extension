@@ -465,6 +465,16 @@ class BasePlugin:
         if not dest_dir:
             raise NotImplementedError("Can't support the file type: %s" % ftype)
 
+        current_path = os.environ.get('CHOPPY_CURRENT_FILE_PATH', os.getcwd())
+        # May be current_path is a file path, but we need a directory.
+        if os.path.isfile(current_path):
+            current_path = os.path.dirname(current_path)
+
+        # The path is an absolute path when os.path.abspath(path) == path.
+        # We need to get the absolute path when the path is a relative path.
+        if os.path.abspath(path) != path:
+            path = os.path.abspath(os.path.join(current_path, path))
+
         if os.path.isfile(path):
             is_file = True
             net_path = 'file://' + os.path.abspath(path)
@@ -948,7 +958,10 @@ class BasePlugin:
                 logfile = ''
 
             try:
-                response = requests_retry_session(delay=config.wait_server_seconds).get(access_url, timeout=10)
+                response = requests_retry_session(
+                    delay=config.wait_server_seconds,
+                    backoff_factor=config.backoff_factor
+                ).get(access_url, timeout=10)
             except Exception as err:
                 self.logger.debug('Try to launch plugin server: %s' % str(err))
                 rendered_lst = self.get_error_log(logfile=logfile)

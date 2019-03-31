@@ -51,7 +51,10 @@ if conf_path:
         protocol = config.get('plugin', 'protocol')
         domain = config.get('plugin', 'domain')
         enable_iframe = config.getboolean('plugin', 'enable_iframe')
-        wait_server_seconds = config.getint('wait_server_seconds', 5)
+        wait_server_seconds = config.getint('wait_server_seconds', 3)
+        if wait_server_seconds < 0:
+            wait_server_seconds = 0
+        backoff_factor = config.getfloat('backoff_factor', 3)
     else:
         logger.warn('No plugin section in config file.')
         plugin_cache_dir = os.path.join('/tmp', 'choppy-media-extension')
@@ -60,7 +63,8 @@ if conf_path:
         protocol = 'http'
         domain = '127.0.0.1'
         enable_iframe = True
-        wait_server_seconds = 5
+        wait_server_seconds = 3
+        backoff_factor = 3
 
     logger.info('Create plugin_cache_dir: %s' % plugin_cache_dir)
     check_dir(plugin_cache_dir, skip=True)
