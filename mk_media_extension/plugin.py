@@ -876,7 +876,7 @@ class BasePlugin:
         def render_code(msg):
             code = """\
 <div class='alert {}' role='alert'>
-<pre class="highlight"><code>
+<pre class='highlight'><code>
 {}
 </pre></code>
 </div>""".format(error_type.get(msg_type.lower(), 'alert-warning'), msg)
@@ -948,7 +948,7 @@ class BasePlugin:
                 logfile = ''
 
             try:
-                response = requests_retry_session().get(access_url, timeout=5)
+                response = requests_retry_session(delay=config.wait_server_seconds).get(access_url, timeout=10)
             except Exception as err:
                 self.logger.debug('Try to launch plugin server: %s' % str(err))
                 rendered_lst = self.get_error_log(logfile=logfile)

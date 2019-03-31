@@ -31,7 +31,7 @@ requirements:
     - Markdown
     - pyparsing
     - requests
-    - multiqc
+    - multiqc>=1.7
     - sqlalchemy
     - docker-py
     - psutil
@@ -48,13 +48,12 @@ requirements:
     - r-ggplot2
     - r-colourpicker
     - r-d3heatmap
+    - r-shinycssloaders
     # Choppy Channel
-    # - r-configr
-    # - r-scatterd3
-
-    # meta-package installs futures for 2.7 but not for 3.x
-    # needed in order to be able to build no-arch conda packages
-    - futures-compat
+    - r-configr
+    - r-scatterd3
+    - r-ggcorrplot
+    - r-upsetr
 
 # test:
 #   imports:

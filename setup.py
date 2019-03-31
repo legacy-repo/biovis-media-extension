@@ -30,10 +30,10 @@ setup(
         'Markdown>=3.0.1',
         'pyparsing>=2.3.1',
         'requests>=2.21.0',
-        'multiqc>=1.7'
+        'multiqc>=1.7',
         'sqlalchemy>=1.2.18',
-        'docker>=3.7.0',
-        'psutil>=5.5.1',
+        'docker>=3.5.1',
+        'psutil>=5.5.1'
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
