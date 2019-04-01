@@ -18,7 +18,7 @@ from mk_media_extension.docker_mgmt import Docker
 from mk_media_extension.process_mgmt import Process
 from mk_media_extension.utils import (check_dir, copy_and_overwrite,
                                       BashColors, get_candidate_name,
-                                      find_free_port)
+                                      find_free_port, get_local_abs_fpath)
 from mk_media_extension.file_mgmt import run_copy_files, get_oss_fsize
 from mk_media_extension.request_mgmt import requests_retry_session
 
@@ -295,7 +295,7 @@ class BasePlugin:
                 content_length = os.path.getsize(path)
             else:
                 # If path does't exist, skip it by giving a huge value.
-                content_length = 10000000
+                content_length = 1000000000000000000000000000
         elif protocol == 'ftp':
             # TODO: support to get file size(ftp).
             content_length = 0
@@ -306,6 +306,8 @@ class BasePlugin:
 
     def _fsize_is_ok(self, path, target_value, protocol='http'):
         file_size = self.get_file_size(path, protocol=protocol)
+        self.logger.debug("Path: %s, target_value: %s, file_size: %s, "
+                          "protocol: %s" % (path, target_value, file_size, protocol))
         if file_size < target_value:
             return True
         else:
@@ -342,10 +344,17 @@ class BasePlugin:
 
         for key, value in self._context.items():
             if isinstance(value, str):
-                if re.match(file_pattern, str(value))\
-                   and self._fsize_is_ok(value, self.target_fsize, 'file'):
+                # We need to cache all related files before render markdown files.
+                # e.g. files in context, _prepare_js(), _prepare_css(), external_data()
+                # Only files in context are from end user and the file path may be a relative path,
+                # so need to get the real absolute path.
+                abs_path = get_local_abs_fpath(value)
+                if re.match(file_pattern, str(abs_path))\
+                   and self._fsize_is_ok(abs_path, self.target_fsize, 'file'):
+                    # The path of file in context may be a relative path,
+                    # so we need to get real path firstly.
                     files.append({
-                        'value': value,
+                        'value': abs_path,
                         'key': key,
                         'type': 'context'
                     })
@@ -374,6 +383,7 @@ class BasePlugin:
                         'type': 'context'
                     })
 
+        self.logger.debug("Filter Context Files: %s" % str(files))
         return files
 
     @property
@@ -465,26 +475,16 @@ class BasePlugin:
         if not dest_dir:
             raise NotImplementedError("Can't support the file type: %s" % ftype)
 
-        current_path = os.environ.get('CHOPPY_CURRENT_FILE_PATH', os.getcwd())
-        # May be current_path is a file path, but we need a directory.
-        if os.path.isfile(current_path):
-            current_path = os.path.dirname(current_path)
-
-        # The path is an absolute path when os.path.abspath(path) == path.
-        # We need to get the absolute path when the path is a relative path.
-        if os.path.abspath(path) != path:
-            path = os.path.abspath(os.path.join(current_path, path))
-
         if os.path.isfile(path):
             is_file = True
-            net_path = 'file://' + os.path.abspath(path)
+            net_path = 'file://' + path
         elif os.path.isdir(path):
             is_file = False
-            net_path = 'file://' + os.path.abspath(path)
+            net_path = 'file://' + path
         else:
             net_path = path
 
-        self.logger.debug('_save_file net_path: %s' % net_path)
+        self.logger.debug('_save_file file_path: %s' % net_path)
         matched = re.match(r'^(https|http|file|ftp|oss)://.*$', net_path)
         if matched:
             protocol = matched.groups()[0]
@@ -683,13 +683,25 @@ class BasePlugin:
             else:
                 return None, None
 
+    def update_context(self, **kwargs):
+        new_context = {}
+        for key, value in kwargs.items():
+            new_value = self.get_real_path(key)
+            if new_value != '':
+                new_context[key] = new_value
+            else:
+                new_context[key] = value
+        self.logger.debug("Old context: %s, new context: %s" % (kwargs, new_context))
+        return new_context
+
     def server(self):
         if self.is_server:
             if self.plugin_dir:
                 src_code_dir = os.path.join(self.plugin_dir, self.plugin_name)
-                process = Process(src_code_dir)
+                process = Process(command_dir=src_code_dir, workdir=self.tmp_plugin_dir)
                 port = find_free_port()
-                process_id = process.run_command(port=port, **self.context)
+                updated_context = self.update_context(**self.context)
+                process_id = process.run_command(port=port, **updated_context)
                 access_url = '{protocol}://{domain}:{port}'.format(protocol=config.protocol,
                                                                    domain=config.domain,
                                                                    port=port)

@@ -51,13 +51,9 @@ class BashColors:
 def copy_and_overwrite(from_path, to_path, is_file=False, force_remove=True):
     if os.path.isfile(to_path) and force_remove:
         os.remove(to_path)
-    else:
-        logger.debug('%s exists, please check!' % to_path)
 
     if os.path.isdir(to_path) and force_remove:
         shutil.rmtree(to_path)
-    else:
-        logger.debug('%s exists, please check!' % to_path)
 
     try:
         if is_file and os.path.isfile(from_path):
@@ -152,3 +148,22 @@ def find_free_port():
         s.bind(('', 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         return s.getsockname()[1]
+
+
+def get_local_abs_fpath(path):
+    current_path = os.environ.get('CHOPPY_CURRENT_FILE_PATH', os.getcwd())
+    # May be current_path is a file path, but we need a directory.
+    if os.path.isfile(current_path):
+        current_path = os.path.dirname(current_path)
+
+    # The path is an absolute path when os.path.abspath(path) == path.
+    # We need to get the absolute path when the path is a relative path.
+    if os.path.abspath(path) != path:
+        real_path = os.path.abspath(os.path.join(current_path, path))
+    else:
+        real_path = os.path.abspath(path)
+
+    if os.path.isfile(real_path) or os.path.isdir(real_path):
+        path = real_path
+
+    return path

@@ -45,16 +45,18 @@ if conf_path:
     access_secret = config.get('oss', 'access_secret')
     endpoint = config.get('oss', 'endpoint')
     if config.has_section('plugin'):
+        plugin_section = config['plugin']
+        # No default cache directory to need
         plugin_cache_dir = os.path.expanduser(config.get('plugin', 'cache_dir'))
         plugin_db = os.path.expanduser(config.get('plugin', 'plugin_db'))
         clean_cache = config.getboolean('plugin', 'clean_cache')
         protocol = config.get('plugin', 'protocol')
         domain = config.get('plugin', 'domain')
         enable_iframe = config.getboolean('plugin', 'enable_iframe')
-        wait_server_seconds = config.getint('wait_server_seconds', 3)
+        wait_server_seconds = plugin_section.getint('wait_server_seconds', 3)
         if wait_server_seconds < 0:
             wait_server_seconds = 0
-        backoff_factor = config.getfloat('backoff_factor', 3)
+        backoff_factor = plugin_section.getfloat('backoff_factor', 3)
     else:
         logger.warn('No plugin section in config file.')
         plugin_cache_dir = os.path.join('/tmp', 'choppy-media-extension')

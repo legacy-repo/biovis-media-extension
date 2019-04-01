@@ -8,16 +8,22 @@ import signal
 import logging
 import subprocess
 from mk_media_extension import config
-from mk_media_extension.utils import get_candidate_name, check_dir, copy_and_overwrite
+from mk_media_extension.utils import (get_candidate_name, check_dir,
+                                      copy_and_overwrite)
 
 
 class Process:
-    def __init__(self, command_dir=None, main_program_name='run.sh'):
+    def __init__(self, command_dir=None, workdir='/tmp/', main_program_name='run.sh'):
         self.logger = logging.getLogger('choppy-media-extension.process_mgmt.Process')
         if command_dir:
             self.command_dir = command_dir
             command_dirname = os.path.basename(command_dir)
-            self.workdir = os.path.join(config.plugin_cache_dir,
+            if os.path.isdir(config.plugin_cache_dir):
+                plugin_cache_dir = config.plugin_cache_dir
+            else:
+                plugin_cache_dir = workdir
+
+            self.workdir = os.path.join(plugin_cache_dir,
                                         '%s_%s' % (command_dirname, get_candidate_name()))
             self.main_program = os.path.join(self.workdir, main_program_name)
             self.logger.debug('Main program: %s' % self.main_program)
@@ -47,7 +53,12 @@ class Process:
 
         for key, value in kwargs.items():
             if cfg.has_option('data', key) and value:
-                cfg.set('data', key, value)
+                if os.path.isfile(value):
+                    basename = os.path.basename(value)
+                    copy_and_overwrite(value, os.path.join(dest_dir, basename), is_file=True)
+                    cfg.set('data', key, basename)
+                else:
+                    cfg.set('data', key, value)
 
             if cfg.has_option('attributes', key) and value:
                 cfg.set('attributes', key, value)

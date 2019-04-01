@@ -1,5 +1,5 @@
 # {% set data = load_setup_py_data() %}
-{% set version = '0.1.1' %}
+{% set version = '0.1.2' %}
 {% set url = 'http://choppy.3steps.cn' %}
 {% set description = 'Display dynamic plot or more multimedia content in markdown.' %}
 
