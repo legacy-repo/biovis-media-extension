@@ -57,6 +57,9 @@ if conf_path:
         if wait_server_seconds < 0:
             wait_server_seconds = 0
         backoff_factor = plugin_section.getfloat('backoff_factor', 3)
+        target_fsize = plugin_section.getint('target_fsize', 30)
+        if target_fsize < 1:
+            target_fsize = 1
     else:
         logger.warn('No plugin section in config file.')
         plugin_cache_dir = os.path.join('/tmp', 'choppy-media-extension')
@@ -67,9 +70,11 @@ if conf_path:
         enable_iframe = True
         wait_server_seconds = 3
         backoff_factor = 3
+        target_fsize = 30
 
     logger.info('Create plugin_cache_dir: %s' % plugin_cache_dir)
-    check_dir(plugin_cache_dir, skip=True)
+    if plugin_cache_dir:
+        check_dir(plugin_cache_dir, skip=True)
     check_oss_config()
 
 

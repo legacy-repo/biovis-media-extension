@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import re
 import logging
+from mk_media_extension import config
 from markdown.preprocessors import Preprocessor
 from markdown.extensions import Extension
 from mk_media_extension.plugin import get_plugins, get_internal_plugins
@@ -60,7 +61,7 @@ class Code:
                                       Plugin.__module__, Plugin.__name__, BasePlugin.__module__,
                                       BasePlugin.__name__))
 
-            plugin = Plugin(context, self.net_dir)
+            plugin = Plugin(context, self.net_dir, target_fsize=config.target_fsize)
         return plugin
 
     def _parse(self):

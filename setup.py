@@ -36,12 +36,11 @@ setup(
         'psutil>=5.5.1'
     ],
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 1 - Alpha',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
-        'License :: Other/Proprietary License',
+        'License :: AGPL 3.0 License',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
     ],
     entry_points={
