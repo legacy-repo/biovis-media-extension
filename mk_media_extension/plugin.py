@@ -349,6 +349,13 @@ class BasePlugin:
                 # Only files in context are from end user and the file path may be a relative path,
                 # so need to get the real absolute path.
                 abs_path = get_local_abs_fpath(value)
+                if re.match(file_pattern, str(abs_path)) and os.path.isdir(abs_path):
+                    files.append({
+                        'value': abs_path,
+                        'key': key,
+                        'type': 'context'
+                    })
+
                 if re.match(file_pattern, str(abs_path))\
                    and self._fsize_is_ok(abs_path, self.target_fsize, 'file'):
                     # The path of file in context may be a relative path,
@@ -628,8 +635,12 @@ class BasePlugin:
         from subprocess import CalledProcessError, PIPE, Popen
 
         output_dir = self._get_dest_dir('html')
+        output_fname = 'multiqc_report_%s' % get_candidate_name()
+        report_output = '%s/%s.html' % (output_dir, output_fname)
+
         check_dir(output_dir, skip=True, force=True)
-        multiqc_cmd = ['multiqc', analysis_dir, '-o', output_dir]
+        multiqc_cmd = ['multiqc', '-o', output_dir, '--filename',
+                       output_fname, analysis_dir]
         # write metadata to plugin.db
         metadata = {}
         metadata['name'] = self.plugin_name
@@ -648,12 +659,12 @@ class BasePlugin:
                     sys.stdout.flush()
                     process.poll()
 
-                metadata['access_url'] = output_dir
+                metadata['access_url'] = report_output
                 add_plugin(**metadata)
 
                 self.logger.info("Running multiqc plugin (%s) successfully, "
-                                 "Output in %s.\n" % (self.plugin_name, output_dir))
-                return output_dir
+                                 "Output in %s.\n" % (self.plugin_name, report_output))
+                return report_output
             except CalledProcessError as e:
                 self.logger.critical(e)
                 return None

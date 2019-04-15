@@ -21,16 +21,15 @@ class MultiqcPlugin(BasePlugin):
         return [{'multiqc_css': test_css}]
 
     def check_plugin_args(self, **kwargs):
-        number = kwargs.get('analysisDir')
+        analysis_dir = kwargs.get('analysisDir')
         kwargs_str = ', '.join('%s=%r' % x for x in kwargs.items())
         self.logger.info('Running @%s(%s)' % (self.plugin_name, kwargs_str))
-        if not number:
+        if not analysis_dir:
             raise Exception('%s must have a analysisDir argument' % self.plugin_name)
 
     def render(self, **kwargs):
         analysis_dir = self.get_real_path('analysisDir')
-        output_dir = self.multiqc(analysis_dir)
-        multiqc_path = os.path.join(output_dir, 'multiqc_report.html')
+        multiqc_path = self.multiqc(analysis_dir)
         if os.path.isfile(str(multiqc_path)):
             self.set_index('multiqc', multiqc_path, ftype='html')
             div_component = '<a href="%s" target="_blank">See Multiqc Report for More details.</a>'\
