@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 import re
 import logging
-from mk_media_extension import config
 from markdown.preprocessors import Preprocessor
 from markdown.extensions import Extension
 from mk_media_extension.plugin import get_plugins, get_internal_plugins
@@ -18,7 +17,11 @@ class Code:
     """
     Parse plugin call code and execute it.
     """
-    def __init__(self, code, net_dir):
+
+    def __init__(self, code, net_dir, sync_oss=True, sync_http=True,
+                 sync_ftp=True, target_fsize=10, protocol='http',
+                 domain='127.0.0.1', enable_iframe=True,
+                 wait_server_seconds=5, backoff_factor=3):
         """
         Initialize code instance.
 
@@ -31,6 +34,15 @@ class Code:
         self.internal_plugins = get_internal_plugins()
         self.installed_convertors = get_convertors()
         self.net_dir = net_dir
+        self.target_fsize = target_fsize
+        self.sync_oss = sync_oss
+        self.sync_http = sync_http
+        self.sync_ftp = sync_ftp
+        self.protocol = protocol
+        self.domain = domain
+        self.enable_iframe = enable_iframe
+        self.wait_server_seconds = wait_server_seconds
+        self.backoff_factor = backoff_factor
 
     def load_convertor(self, name, context):
         if name not in self.installed_convertors:
@@ -61,7 +73,12 @@ class Code:
                                       Plugin.__module__, Plugin.__name__, BasePlugin.__module__,
                                       BasePlugin.__name__))
 
-            plugin = Plugin(context, self.net_dir, target_fsize=config.target_fsize)
+            plugin = Plugin(context, self.net_dir, target_fsize=self.target_fsize,
+                            sync_oss=self.sync_oss, sync_http=self.sync_http,
+                            sync_ftp=self.sync_ftp, protocol=self.protocol, domain=self.domain,
+                            enable_iframe=self.enable_iframe,
+                            wait_server_seconds=self.wait_server_seconds,
+                            backoff_factor=self.backoff_factor)
         return plugin
 
     def _parse(self):
@@ -186,11 +203,21 @@ class ChoppyPluginPreprocessor(Preprocessor):
     """
     Dynamic Plot / Multimedia Preprocessor for Python-Markdown.
     """
+
     def __init__(self, md, config):
         super(ChoppyPluginPreprocessor, self).__init__(md)
         self.logger = logging.getLogger(__name__)
 
         self.net_dir = config.get('net_dir', None)
+        self.target_fsize = config.get('target_fsize', 10)
+        self.sync_oss = config.get('sync_oss', True)
+        self.sync_http = config.get('sync_http', True)
+        self.sync_ftp = config.get('sync_ftp', True)
+        self.protocol = config.get('protocol', 'http')
+        self.domain = config.get('domain', '127.0.0.1')
+        self.enable_iframe = config.get('enable_iframe', True)
+        self.wait_server_seconds = config.get('wait_server_seconds', 5)
+        self.backoff_factor = config.get('backoff_factor', 3)
 
         if self.net_dir is None:
             color_msg = BashColors.get_color_msg('WARNING', "mk_media_extension's kwarg net_dir is not set, so it will be instead by qiniu url.")
@@ -212,7 +239,11 @@ class ChoppyPluginPreprocessor(Preprocessor):
                 code_str = re.sub(r'\s', '', ''.join(block))
 
                 # Parse plugin call code, and then call plugin.
-                code_instance = Code(code_str, self.net_dir)
+                code_instance = Code(code_str, self.net_dir, target_fsize=self.target_fsize,
+                                     sync_oss=self.sync_oss, sync_http=self.sync_http, sync_ftp=self.sync_ftp, protocol=self.protocol, domain=self.domain,
+                                     enable_iframe=self.enable_iframe,
+                                     wait_server_seconds=self.wait_server_seconds,
+                                     backoff_factor=self.backoff_factor)
                 js_code_lines = code_instance.generate()
                 new_lines.extend(js_code_lines)
                 block = []
@@ -244,11 +275,23 @@ class ChoppyPluginPreprocessor(Preprocessor):
 class ChoppyPluginExtension(Extension):
     def __init__(self, **kwargs):
         self.config = {
-            'net_dir': [None, 'a directory which is used as html directory.'],
+            'net_dir': [None, 'A directory which is used as html directory.'],
+            'protocol': ['http', 'Http protocol'],
+            'domain': ['127.0.0.1', 'Domain for plugin server'],
+            'enable_iframe': [True, 'Enable to generate iframe for all plugins'],
+            'wait_server_seconds': [5, 'If you specify a wait_server_seconds that greater than 0, sleep() will sleep for wait_server_seconds. When wait_server_seconds less than or equal than 0, it will be set 0.'],
+            'backoff_factor': [3, 'A backoff factor to apply between attempts after the second try (most errors are resolved immediately by a second try without a delay). urllib3 will sleep for: {backoff factor} * (2 ** ({number of total retries} - 1)) seconds. If the backoff_factor is 0.1, then sleep() will sleep for [0.0s, 0.2s, 0.4s, …] between retries. It will never be longer than 120s.'],
+            'target_fsize': [10, 'All files that size is less than target_fsize could be cached.']
         }
 
         self.config.update({
             'net_dir': [kwargs.get('net_dir'), 'a directory which is used as html directory.'],
+            'protocol': [kwargs.get('protocol'), 'Http protocol'],
+            'domain': [kwargs.get('domain'), 'Domain for plugin server'],
+            'enable_iframe': [kwargs.get('enable_iframe'), 'Enable to generate iframe for all plugins'],
+            'wait_server_seconds': [kwargs.get('wait_server_seconds'), 'If you specify a wait_server_seconds that greater than 0, sleep() will sleep for wait_server_seconds. When wait_server_seconds less than or equal than 0, it will be set 0.'],
+            'backoff_factor': [kwargs.get('backoff_factor'), 'A backoff factor to apply between attempts after the second try (most errors are resolved immediately by a second try without a delay). urllib3 will sleep for: {backoff factor} * (2 ** ({number of total retries} - 1)) seconds. If the backoff_factor is 0.1, then sleep() will sleep for [0.0s, 0.2s, 0.4s, …] between retries. It will never be longer than 120s.'],
+            'target_fsize': [kwargs.get('target_fsize'), 'All files that size is less than target_fsize could be cached.']
         })
 
     def extendMarkdown(self, md, md_globals):

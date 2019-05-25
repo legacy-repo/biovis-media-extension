@@ -4,7 +4,6 @@ import os
 import sys
 import logging
 import configparser
-from mk_media_extension.utils import check_dir
 
 logger = logging.getLogger(__name__)
 CONFIG_FILES = ['~/.choppy/choppy.conf', '/etc/choppy.conf']
@@ -44,37 +43,7 @@ if conf_path:
     access_key = config.get('oss', 'access_key')
     access_secret = config.get('oss', 'access_secret')
     endpoint = config.get('oss', 'endpoint')
-    if config.has_section('plugin'):
-        plugin_section = config['plugin']
-        # No default cache directory to need
-        plugin_cache_dir = os.path.expanduser(config.get('plugin', 'cache_dir'))
-        plugin_db = os.path.expanduser(config.get('plugin', 'plugin_db'))
-        clean_cache = config.getboolean('plugin', 'clean_cache')
-        protocol = config.get('plugin', 'protocol')
-        domain = config.get('plugin', 'domain')
-        enable_iframe = config.getboolean('plugin', 'enable_iframe')
-        wait_server_seconds = plugin_section.getint('wait_server_seconds', 3)
-        if wait_server_seconds < 0:
-            wait_server_seconds = 0
-        backoff_factor = plugin_section.getfloat('backoff_factor', 3)
-        target_fsize = plugin_section.getint('target_fsize', 30)
-        if target_fsize < 1:
-            target_fsize = 1
-    else:
-        logger.warn('No plugin section in config file.')
-        plugin_cache_dir = os.path.join('/tmp', 'choppy-media-extension')
-        plugin_db = os.path.join('/tmp/choppy-media-extension', 'plugin.db')
-        clean_cache = True
-        protocol = 'http'
-        domain = '127.0.0.1'
-        enable_iframe = True
-        wait_server_seconds = 3
-        backoff_factor = 3
-        target_fsize = 30
 
-    logger.info('Create plugin_cache_dir: %s' % plugin_cache_dir)
-    if plugin_cache_dir:
-        check_dir(plugin_cache_dir, skip=True)
     check_oss_config()
 
 

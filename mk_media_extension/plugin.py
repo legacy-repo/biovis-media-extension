@@ -12,7 +12,6 @@ import requests
 import logging
 import collections
 import pkg_resources
-from mk_media_extension import config
 from mk_media_extension.models import add_plugin, get_plugin
 from mk_media_extension.docker_mgmt import Docker
 from mk_media_extension.process_mgmt import Process
@@ -76,7 +75,9 @@ class BasePlugin:
     docker_image = None
 
     def __init__(self, context, net_dir=None, sync_oss=True,
-                 sync_http=True, sync_ftp=True, target_fsize=10):
+                 sync_http=True, sync_ftp=True, target_fsize=10,
+                 protocol='http', domain='127.0.0.1', enable_iframe=True,
+                 wait_server_seconds=5, backoff_factor=3):
         """
         Initialize BasePlugin class.
 
@@ -102,6 +103,13 @@ class BasePlugin:
         self.sync_http = sync_http
         self.sync_ftp = sync_ftp
         self.target_fsize = target_fsize
+        self.plugin_db = os.path.join(temp_dir, 'plugin.db')
+        self.domain = domain
+        self.protocol = protocol
+        self.enable_iframe = enable_iframe
+        self.wait_server_seconds = wait_server_seconds
+        self.backoff_factor = backoff_factor
+
         self.tmp_plugin_dir = os.path.join(temp_dir, str(uuid.uuid1()))
         # Fix bug: use plugin name as global dir name instead of random file name
         #          for saving all files from a plugin.
@@ -502,7 +510,8 @@ class BasePlugin:
                 # TODO: May be copy_and_overwrite will make some mistakes.
                 copy_and_overwrite(path, dest_filepath, is_file=is_file)
             elif protocol == 'oss':
-                run_copy_files(path, dest_filepath, recursive=False, silent=True)
+                run_copy_files(path, dest_filepath, self.plugin_data_dir,
+                               recursive=False, silent=True)
             elif protocol == 'http' or protocol == 'https':
                 r = requests.get(net_path)
                 if r.status_code == 200:
@@ -647,7 +656,7 @@ class BasePlugin:
         metadata['command'] = '@{}({})'.format(self.plugin_name, self._get_args(**self.context))
         metadata['command_md5'] = self._md5(metadata['command'])
         metadata['is_server'] = self.is_server
-        plugin = get_plugin(metadata['command_md5'])
+        plugin = get_plugin(metadata['command_md5'], self.plugin_db)
         if not plugin:
             try:
                 process = Popen(multiqc_cmd, stdout=PIPE)
@@ -660,7 +669,7 @@ class BasePlugin:
                     process.poll()
 
                 metadata['access_url'] = report_output
-                add_plugin(**metadata)
+                add_plugin(**metadata, plugin_db=self.plugin_db)
 
                 self.logger.info("Running multiqc plugin (%s) successfully, "
                                  "Output in %s.\n" % (self.plugin_name, report_output))
@@ -687,8 +696,8 @@ class BasePlugin:
                 port = find_free_port()
                 docker_obj = docker.run_docker(self.docker_image, {}, ports={'3838/tcp': port})
                 id = docker_obj.id
-                access_url = '{protocol}://{domain}:{port}'.format(protocol=config.protocol,
-                                                                   domain=config.domain,
+                access_url = '{protocol}://{domain}:{port}'.format(protocol=self.protocol,
+                                                                   domain=self.domain,
                                                                    port=port)
                 return id, access_url
             else:
@@ -712,9 +721,9 @@ class BasePlugin:
                 process = Process(command_dir=src_code_dir, workdir=self.tmp_plugin_dir)
                 port = find_free_port()
                 updated_context = self.update_context(**self.context)
-                process_id = process.run_command(port=port, **updated_context)
-                access_url = '{protocol}://{domain}:{port}'.format(protocol=config.protocol,
-                                                                   domain=config.domain,
+                process_id = process.run_command(domain=self.domain, port=port, **updated_context)
+                access_url = '{protocol}://{domain}:{port}'.format(protocol=self.protocol,
+                                                                   domain=self.domain,
                                                                    port=port)
                 return process_id, access_url, process.workdir
             else:
@@ -736,7 +745,7 @@ class BasePlugin:
         metadata['command'] = '@{}({})'.format(self.plugin_name, self._get_args(**self.context))
         metadata['command_md5'] = self._md5(metadata['command'])
 
-        plugin = get_plugin(metadata['command_md5'])
+        plugin = get_plugin(metadata['command_md5'], self.plugin_db)
         if not plugin:
             metadata['is_server'] = self.is_server
             container_id, access_url = self.docker()
@@ -752,7 +761,7 @@ class BasePlugin:
                 metadata['workdir'] = workdir
 
             if access_url:
-                add_plugin(**metadata)
+                add_plugin(**metadata, plugin_db=self.plugin_db)
             self.logger.info("Launching plugin server(%s) successfully, Serving on %s.\n" % (self.plugin_name, access_url))
             return access_url, workdir
         else:
@@ -968,7 +977,7 @@ class BasePlugin:
             if not isinstance(rendered_lst, list):
                 raise NotImplementedError('Plugin does not yet support plotly framework.')
 
-            if config.enable_iframe:
+            if self.enable_iframe:
                 iframe = self._gen_iframe(rendered_lst)
                 rendered_lst = [iframe, ]
 
@@ -982,8 +991,8 @@ class BasePlugin:
 
             try:
                 response = requests_retry_session(
-                    delay=config.wait_server_seconds,
-                    backoff_factor=config.backoff_factor
+                    delay=self.wait_server_seconds,
+                    backoff_factor=self.backoff_factor
                 ).get(access_url, timeout=10)
             except Exception as err:
                 self.logger.debug('Try to launch plugin server: %s' % str(err))
@@ -1003,7 +1012,7 @@ class BasePlugin:
             if not isinstance(rendered_lst, list):
                 raise NotImplementedError('You need to implement render method.')
 
-            if config.enable_iframe:
+            if self.enable_iframe:
                 iframe = self._gen_iframe(rendered_lst)
                 rendered_lst = [iframe, ]
 

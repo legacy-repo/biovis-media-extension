@@ -7,8 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Column, String, Boolean, Integer
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
-from mk_media_extension import config
-from mk_media_extension.utils import (check_dir, BashColors)
+from mk_media_extension.utils import check_dir
 from mk_media_extension.process_mgmt import Process
 
 logger = logging.getLogger(__name__)
@@ -28,11 +27,11 @@ class Plugin(Base):
     workdir = Column(String(255), nullable=True)
 
 
-def init_db():
+def init_db(plugin_db):
     # Create an engine that stores data in the local directory's
     # sqlalchemy_example.db file.
-    check_dir(os.path.dirname(config.plugin_db), skip=True)
-    engine = create_engine('sqlite:///%s' % config.plugin_db)
+    check_dir(os.path.dirname(plugin_db), skip=True)
+    engine = create_engine('sqlite:///%s' % plugin_db)
 
     # Create all tables in the engine. This is equivalent to "Create Table"
     # statements in raw SQL.
@@ -40,9 +39,9 @@ def init_db():
     return engine
 
 
-def add_plugin(name, command, command_md5, access_url, workdir=None,
+def add_plugin(name, command, command_md5, access_url, plugin_db, workdir=None,
                is_server=False, container_id=None, process_id=None):
-    engine = init_db()
+    engine = init_db(plugin_db)
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
     new_plugin = Plugin(name=name, command=command, command_md5=command_md5,
@@ -54,8 +53,8 @@ def add_plugin(name, command, command_md5, access_url, workdir=None,
     session.close()
 
 
-def get_plugin(command_md5):
-    engine = init_db()
+def get_plugin(command_md5, plugin_db):
+    engine = init_db(plugin_db)
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
     plugins = session.query(Plugin).filter(Plugin.command_md5 == command_md5).all()
@@ -66,16 +65,16 @@ def get_plugin(command_md5):
         return False
 
 
-def get_plugins():
-    engine = init_db()
+def get_plugins(plugin_db):
+    engine = init_db(plugin_db)
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
     plugins = session.query(Plugin).all()
     return plugins
 
 
-def delete_plugin(command_md5):
-    engine = init_db()
+def delete_plugin(command_md5, plugin_db):
+    engine = init_db(plugin_db)
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
     plugins = session.query(Plugin).filter(Plugin.command_md5 == command_md5).all()
@@ -88,29 +87,9 @@ def delete_plugin(command_md5):
 
 def clean_at_exit():
     import atexit
-    import shutil
-    plugins = get_plugins()
-
-    def clean_cache_db():
-        for plugin in plugins:
-            msg = '\nClean cache and database record for plugin %s' % plugin.name
-            color_msg = BashColors.get_color_msg('INFO', msg)
-            logger.debug(color_msg)
-            if config.clean_cache:
-                workdir = plugin.workdir
-                shutil.rmtree(workdir, ignore_errors=True)
-
-            try:
-                os.remove(config.plugin_db)
-            except Exception:
-                pass
-
-            color_msg = BashColors.get_color_msg('SUCCESS', 'Clean successfully.')
-            logger.debug(color_msg)
 
     process = Process()
     atexit.register(process.clean_processs)
-    atexit.register(clean_cache_db)
 
 
 # clean_at_exit may not work, so you need to clean all dirty directory before launching choppy.
