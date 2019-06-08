@@ -61,7 +61,12 @@ class Code:
     def load_plugin(self, name, context):
         InternalPlugin = self.internal_plugins.get(name)
         if InternalPlugin:
-            plugin = InternalPlugin(context, self.net_dir)
+            plugin = InternalPlugin(context=context, net_dir=self.net_dir, target_fsize=self.target_fsize,
+                                    sync_oss=self.sync_oss, sync_http=self.sync_http,
+                                    sync_ftp=self.sync_ftp, protocol=self.protocol, domain=self.domain,
+                                    enable_iframe=self.enable_iframe,
+                                    wait_server_seconds=self.wait_server_seconds,
+                                    backoff_factor=self.backoff_factor)
         else:
             if name not in self.installed_plugins:
                 raise ValidationError('The "{0}" plugin is not installed'.format(name))
@@ -73,7 +78,7 @@ class Code:
                                       Plugin.__module__, Plugin.__name__, BasePlugin.__module__,
                                       BasePlugin.__name__))
 
-            plugin = Plugin(context, self.net_dir, target_fsize=self.target_fsize,
+            plugin = Plugin(context=context, net_dir=self.net_dir, target_fsize=self.target_fsize,
                             sync_oss=self.sync_oss, sync_http=self.sync_http,
                             sync_ftp=self.sync_ftp, protocol=self.protocol, domain=self.domain,
                             enable_iframe=self.enable_iframe,
@@ -207,7 +212,6 @@ class ChoppyPluginPreprocessor(Preprocessor):
     def __init__(self, md, config):
         super(ChoppyPluginPreprocessor, self).__init__(md)
         self.logger = logging.getLogger(__name__)
-
         self.net_dir = config.get('net_dir', None)
         self.target_fsize = config.get('target_fsize', 10)
         self.sync_oss = config.get('sync_oss', True)
@@ -237,7 +241,6 @@ class ChoppyPluginPreprocessor(Preprocessor):
             if start_matched and end_matched:
                 block.append(striped_line)
                 code_str = re.sub(r'\s', '', ''.join(block))
-
                 # Parse plugin call code, and then call plugin.
                 code_instance = Code(code_str, self.net_dir, target_fsize=self.target_fsize,
                                      sync_oss=self.sync_oss, sync_http=self.sync_http, sync_ftp=self.sync_ftp, protocol=self.protocol, domain=self.domain,

@@ -16,6 +16,9 @@ class MultiqcPlugin(BasePlugin):
     plugin_dir = os.path.dirname(os.path.abspath(__file__))
     is_server = False
 
+    def __init__(self, *args, **kwargs):
+        super(MultiqcPlugin, self).__init__(*args, **kwargs)
+
     def external_css(self):
         test_css = os.path.join(os.path.dirname(__file__), 'multiqc.css')
         return [{'multiqc_css': test_css}]

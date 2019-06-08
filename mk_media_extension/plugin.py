@@ -74,10 +74,7 @@ class BasePlugin:
     """
     docker_image = None
 
-    def __init__(self, context, net_dir=None, sync_oss=True,
-                 sync_http=True, sync_ftp=True, target_fsize=10,
-                 protocol='http', domain='127.0.0.1', enable_iframe=True,
-                 wait_server_seconds=5, backoff_factor=3):
+    def __init__(self, *args, **kwargs):
         """
         Initialize BasePlugin class.
 
@@ -88,9 +85,25 @@ class BasePlugin:
         :param: sync_ftp: whether sync ftp.
         :param: file_size: file size(MB).
         """
+        print("BasePlugin: %s, %s" % (str(args), str(kwargs)))
+        self.net_dir = kwargs.get('net_dir', None)
+        self.sync_oss = kwargs.get('sync_oss', True)
+        self.sync_http = kwargs.get('sync_http', True)
+        self.sync_ftp = kwargs.get('sync_ftp', True)
+        self.target_fsize = kwargs.get('target_fsize', 10)
+        self.domain = kwargs.get('domain', '127.0.0.1')
+        self.protocol = kwargs.get('protocol', 'http')
+        self.enable_iframe = kwargs.get('enable_iframe', True)
+        self.wait_server_seconds = kwargs.get('wait_server_seconds', 5)
+        self.backoff_factor = kwargs.get('backoff_factor', 3)
+        # Parse args from markdown new syntax. e.g.
+        # @scatter_plot(a=1, b=2, c=3)
+        # kwargs = {'a': 1, 'b': 2, 'c': 3}
+        self._context = kwargs.get('context', {})
+
         self.logger = logging.getLogger('choppy.mk-media-extension.plugin')
-        if net_dir:
-            temp_dir = os.path.join(net_dir, '.choppy-media-extension')
+        if self.net_dir:
+            temp_dir = os.path.join(self.net_dir, '.choppy-media-extension')
         else:
             temp_dir = os.path.join('/tmp', 'choppy-media-extension')
             self.logger.warn("No net_dir, so use temp directory(%s)." % temp_dir)
@@ -98,17 +111,7 @@ class BasePlugin:
             # TODO: rmtree will cause other choppy process failed, how to solve it?
             shutil.rmtree(temp_dir, ignore_errors=True)
 
-        self.net_dir = net_dir
-        self.sync_oss = sync_oss
-        self.sync_http = sync_http
-        self.sync_ftp = sync_ftp
-        self.target_fsize = target_fsize
         self.plugin_db = os.path.join(temp_dir, 'plugin.db')
-        self.domain = domain
-        self.protocol = protocol
-        self.enable_iframe = enable_iframe
-        self.wait_server_seconds = wait_server_seconds
-        self.backoff_factor = backoff_factor
 
         self.tmp_plugin_dir = os.path.join(temp_dir, str(uuid.uuid1()))
         # Fix bug: use plugin name as global dir name instead of random file name
@@ -129,11 +132,6 @@ class BasePlugin:
 
         for dir in self.ftype2dir.values():
             check_dir(dir, skip=True, force=True)
-
-        # Parse args from markdown new syntax. e.g.
-        # @scatter_plot(a=1, b=2, c=3)
-        # kwargs = {'a': 1, 'b': 2, 'c': 3}
-        self._context = context
 
         # The target_id will help to index html component position.
         self.target_id = str(uuid.uuid1())

@@ -16,5 +16,8 @@ class DensityPlotPlugin(BasePlugin):
     plugin_dir = os.path.dirname(os.path.abspath(__file__))
     is_server = True
 
+    def __init__(self, *args, **kwargs):
+        super(DensityPlotPlugin, self).__init__(*args, **kwargs)
+
     def check_plugin_args(self, **kwargs):
         pass

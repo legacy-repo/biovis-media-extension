@@ -20,6 +20,9 @@ class DataTableJSPlugin(BasePlugin):
     is_server = False
     lib_dir = os.path.join(os.path.dirname(__file__), 'lib')
 
+    def __init__(self, *args, **kwargs):
+        super(DataTableJSPlugin, self).__init__(*args, **kwargs)
+
     def external_css(self):
         datatable_css = os.path.join(self.lib_dir, 'datatables.min.css')
         datatable_custom_css = os.path.join(self.lib_dir, 'datatable-custom.css')

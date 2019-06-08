@@ -19,6 +19,9 @@ class Tabulator(BasePlugin):
     plugin_dir = os.path.dirname(os.path.abspath(__file__))
     is_server = False
 
+    def __init__(self, *args, **kwargs):
+        super(Tabulator, self).__init__(*args, **kwargs)
+
     def external_css(self):
         tabulator_css = os.path.join(os.path.dirname(__file__), 'tabulator.min.css')
         tabulator_theme_css = os.path.join(os.path.dirname(__file__), 'tabulator_bootstrap4.min.css')

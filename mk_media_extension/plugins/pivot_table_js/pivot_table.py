@@ -20,6 +20,9 @@ class PivotTableJSPlugin(BasePlugin):
     is_server = False
     lib_dir = os.path.join(os.path.dirname(__file__), 'lib')
 
+    def __init__(self, *args, **kwargs):
+        super(PivotTableJSPlugin, self).__init__(*args, **kwargs)
+
     def external_css(self):
         pivottable_theme = os.path.join(self.lib_dir, 'theme')
         pivottable_css = os.path.join(self.lib_dir, 'webdatarocks.min.css')
