@@ -32,42 +32,15 @@ shinyServer(function(input, output, session) {
                 statCompareChoices(), multiple=TRUE, selected=NULL)
   })
 
-  reactiveVar <- reactiveValues(colors = c(), my_comparisons = NULL, interactive=TRUE)
+  reactiveVar <- reactiveValues(mode = '', palname = '', my_comparisons = NULL)
 
   # Change color
-  observeEvent(input$boxplot_r_change_color, {
-    col_var <- if (input$boxplot_r_col == "None") NULL else dataFunc()[,input$boxplot_r_col]
-    if (is.null(col_var)) {
-      reactiveVar$colors <- c()
-    }
-
-    col_var <- as.vector(col_var)
-    dataType <- 'all'
-    is.wholenumber <- function(x, tol = .Machine$double.eps^0.5)  abs(x - round(x)) < tol
-    if (all(unlist(lapply(col_var, is.character)))) {
-      dataType <- 'div'
-    } else if (all(unlist(lapply(col_var, is.wholenumber)))) {
-      dataType <- 'qual'
-    } else {
-      dataType <- 'seq'
-    }
-
-    n <- length(unique(col_var))
-    allChoices <- brewer.pal.info
-
-    availableChoices <- allChoices[allChoices$maxcolors > n & allChoices$category == dataType,]
-
-    if (dim(availableChoices)[1] != 0) {
-      colorPal <- sample(rownames(availableChoices), size=1)
-      reactiveVar$colors <- brewer.pal(n, colorPal)
-    } else {
-      reactiveVar$colors <- c()
-    }
+  observeEvent(input$plot_color_mode, {
+    reactiveVar$mode <- input$plot_color_mode
   })
 
-  # Reset color
-  observeEvent(input$boxplot_r_col, {
-    reactiveVar$colors <- c()
+  observeEvent(input$plot_palname, {
+    reactiveVar$palname <- input$plot_palname
   })
 
   # 
@@ -100,7 +73,7 @@ shinyServer(function(input, output, session) {
         output$boxplotlyR <- renderPlotly({
         # important to adjust the label position!
           p <- ggboxplot(dataFunc(), x=input$boxplot_r_x, y=input$boxplot_r_y,
-                         fill=input$boxplot_r_col, palette = reactiveVar$colors) + 
+                         fill=input$boxplot_r_col) + 
               rotate_x_text(angle=as.integer(attrs$xAngle)) + 
               theme(axis.text.x=element_text(size=input$boxplot_r_xyl_labelsize),
                     axis.text.y=element_text(size=input$boxplot_r_xyl_labelsize),
@@ -110,7 +83,8 @@ shinyServer(function(input, output, session) {
                     plot.title = element_text(hjust=0.5),
                     legend.position=input$boxplot_r_legend_pos) +
               ylim(min(dataFunc()[, input$boxplot_r_y], 0)*1.2,
-                    max(dataFunc()[, input$boxplot_r_y]) + input$boxplot_r_y_axis_len)
+                    max(dataFunc()[, input$boxplot_r_y]) + input$boxplot_r_y_axis_len) +
+              ChoppyReportR::get_color_func(palname=reactiveVar$palname, mode=reactiveVar$mode)()
           ggplotly(p) %>% layout(autosize=TRUE, boxmode = "group")
         })
       } else {
@@ -119,7 +93,7 @@ shinyServer(function(input, output, session) {
         output$boxplotR <- renderPlot({
         # important to adjust the label position!
           p <- ggboxplot(dataFunc(), x=input$boxplot_r_x, y=input$boxplot_r_y,
-                         fill=input$boxplot_r_col, palette = reactiveVar$colors) + 
+                         fill=input$boxplot_r_col) + 
               stat_compare_means(comparisons=reactiveVar$my_comparisons) + 
               stat_compare_means(label.y=7.5, label.x=4, bracket.size = 15) + 
               rotate_x_text(angle=as.integer(attrs$xAngle)) + 
@@ -131,7 +105,8 @@ shinyServer(function(input, output, session) {
                     plot.title = element_text(hjust=0.5),
                     legend.position=input$boxplot_r_legend_pos) +
               ylim(min(dataFunc()[, input$boxplot_r_y], 0)*1.2,
-                    max(dataFunc()[, input$boxplot_r_y]) + input$boxplot_r_y_axis_len)
+                    max(dataFunc()[, input$boxplot_r_y]) + input$boxplot_r_y_axis_len) +
+              ChoppyReportR::get_color_func(palname=reactiveVar$palname, mode=reactiveVar$mode)()
           print(p)
         })
       }

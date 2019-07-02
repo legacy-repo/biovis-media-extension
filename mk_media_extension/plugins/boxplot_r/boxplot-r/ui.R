@@ -59,12 +59,12 @@ shinyUI(fluidPage(
                   min = 14, max = 25, value = 14),
       sliderInput("boxplot_r_y_axis_len", "Y Axis Length :",
                   min = 1, max = 25, value = 3, step = 1),
-      tags$p(
-        actionButton("boxplot_r-reset-zoom", 
-                      HTML("<span class='glyphicon glyphicon-search' aria-hidden='true'></span> Reset Zoom")),
-        actionButton("boxplot_r_change_color", 
-                     HTML("<span class='glyphicon glyphicon-screenshot' aria-hidden='true'></span> Change Color"))
-      )
+      selectInput("plot_color_mode", "Color Scale:",
+                  choices = ChoppyReportR::get_mode_lst(),
+                  selected = "color"),
+      selectInput("plot_palname", "Color Palette:",
+                  choices = ChoppyReportR::get_pal_lst(),
+                  selected = "npg")
     )
   )
 ))

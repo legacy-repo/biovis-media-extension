@@ -76,14 +76,9 @@ shinyServer(function(input, output, session) {
                              fill=density_plot_col)) + 
            geom_density(alpha=0.4) +
            geom_vline(data=mu, aes(xintercept=x, color=Group.1), linetype="dashed") +
-           theme(axis.text.x=element_text(angle=angle, hjust=1,
-                                          size=input$density_plot_x_labelsize),
-                 axis.text.y=element_text(size=input$density_plot_y_labelsize),
-                 text=element_text(size=input$density_plot_title_size),
-                 legend.text=element_text(size=input$density_plot_legend_labelsize),
-                 legend.title=element_blank(),
-                 panel.background=element_rect(fill = "white"),
-                 axis.line=element_line(colour='black'))
+           ChoppyReportR::get_theme(density_plot_col, theme_name = 'npg', mode = 'color') + 
+           ChoppyReportR::get_theme(density_plot_col, theme_name = 'npg', mode = 'fill') + 
+           ChoppyReportR::get_basic_theme()
 
       ggplotly(p) %>% layout(autosize=TRUE)
     })
