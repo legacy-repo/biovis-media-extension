@@ -1,140 +1,44 @@
-# markdown-icons (`iconfonts.py`)
+> Author: Jingcheng Yang
+>
+> Email: yjcyxky@163.com
+>
+> Date: 2018-12-13
 
-Easily display icon fonts in python markdown. Just add the CSS necessary for your font and add this extension. 
+# Choppy Media Extension
 
-This is a 3rd party extension for [Python Markdown](https://pythonhosted.org/Markdown/). You can see a [full list of 3rd party extensions here](https://github.com/waylan/Python-Markdown/wiki/Third-Party-Extensions).
+## Summary
+Display dynamic plot or more multimedia content in markdown.
 
-Although this works with any icon font, users can use a `mod` syntax to add more prefixed classes to support [Font Awesome](http://fortawesome.github.io/Font-Awesome/) and its special classes such as `2x, 3x, muted, spin, etc`
+Choppy-media-extension is an extension for Python-Markdown. It can launch dynamic plot or preprocess multimedia.
 
-Furthermore, users can add their own `user_mod` syntax to add additional, non-prefixed, pre-defined classes for greater control over their icons while allowing you to control exactly what styles are allowed.
+## Dependencies
 
-- You can create your own Icon Fonts using the IcoMoon app: http://icomoon.io/app/
-- A great pre-made Icon Font is [Font Awesome (GitHub Project)](http://fortawesome.github.io/Font-Awesome/)
+Choppy requires Python 3+ and Python-Markdown to be loaded in your environment in order for full functionality to work.
 
-See the [python markdown documentation](http://pythonhosted.org/Markdown/) for more information.
-
-Use it in any personal or commercial project you want.
-
-# Current Version: 2.1
-
-# Syntax:
-
-- Accepts a-z, A-Z, 0-9, _(underscore), and - (hypen)
-- Uses [HTML Entity](http://www.w3schools.com/html/html_entities.asp) like syntax: `&entity_name;`
-
+## Syntax
 ```
-&icon-html5;
-&icon-css3;
-&icon-my-icon;
+@boxplot-r(dataFile='boxplot-r.rds', dataType='rds', title='',
+           xAxis='DoubleBlind_0to24', xTitle='DoubleBlind_0to24',
+           xAngle=90, yAxis='HbA1c_DF24to0', yTitle='HbA1c_DF24to0',
+           colorAttr='DoubleBlind_0to24', subtitle='', text='')
+
+Such as @plugin-name(arg1=value, arg2=value)
 ```
 
-Mod syntax:
-```
-&icon-html5:2x;
-&icon-quote:3x,muted;
-&icon-spinner:large,spin;
-```
-
-User mod syntax:
-```
-&icon-html5::red;
-&icon-quote:2x:bold;
-```
-
-#### Example Markdown:
+## Installation
 
 ```
-I love &icon-html5; and &icon-css3;
-&icon-spinner:large,spin; Sorry we have to load...
+pip install mk-media-extension
 ```
 
-##### Output:
-
-```
-I love <i aria-hidden="true" class="icon-html5"></i> and <i aria-hidden="true" class="icon-css3"></i>
-<i aria-hidden="true" class="icon-spinner icon-large icon-spin"></i> Sorry we have to load...
-```
-
-# Installation:
-
-Just drop it in the extensions folder of the markdown package: `markdown/extensions`
-
-
-# Usage / Setup:
-
-#### Default Prefix is "icon-":
-
-##### In a Django Template: 
-`{{ textmd|markdown:"safe,iconfonts" }}`
-
-##### In Python:
-```
-md = markdown.Markdown(extensions=['iconfonts'])
-converted_text = md.convert(text)
-```
-
-
-#### Use a custom Prefix:
-
-##### In a Django Template:
-`{{ textmd|markdown:"safe,iconfonts(prefix=mypref-)" }}`
-
-##### In Python:
-```
-md = markdown.Markdown(extensions=['iconfonts(prefix=mypref-)'])
-converted_text = md.convert(text)
-```
-
-#### No prefix (just in case you couldn't figure it out :P):
-This isn't suggested, as it will take over the already built in HTML Entities
-
-##### In Python:
-```
-md = markdown.Markdown(extensions=['iconfonts(prefix=)'])
-converted_text = md.convert(text)
-```
-
-#### The `base` option allows for use of Bootstrap 3 and FontAwesome 4 icons
-
-##### In Python:
-```
-md = markdown.Markdown(extensions=['iconfonts(base=icon)'])
-converted_text = md.convert(text)
-```
-
-**Input:** `&icon-html5;`
-
-**Output:** `<i aria-hidden="true" class="icon icon-html5"></i>`
-
-#### Combine options with a comma:
-```
-md = markdown.Markdown(extensions=['iconfonts(prefix=fa-, base=fa)'])
-```
-
-#### `prefix_base_pairs` option
-
-The `prefix_base_pairs` option allows for multiple prefix-base pairs to be specified, to allow you to support both Bootstrap 3/Glyphicon and FontAwesome icons
-
-##### In Python:
-```
-md = markdown.Markdown(extensions=['iconfonts'],
-                       extension_configs={
-                           'iconfonts': {
-                               'prefix_base_pairs': {
-                                   'fa-': 'fa',
-                                   'glyphicon-': 'glyphicon',
-                               }
-                           }
-                       })
-converted_text = md.convert(text)
-```
-
-**Input:** `&glyphicon-remove; &fa-html5;`
-
-**Output:** `<i aria-hidden="true" class="glyphicon glyphicon-remove"></i><i aria-hidden="true" class="fa fa-html5"></i>`
-
-# How to run the unit tests
-
- - Install `Markdown`: `pip install markdown`
- - Install markdown icons. Copy the `iconfonts.py` file into `site-packages/markdown/extensions/`
- - Navigate to the test directory in CMD/terminal and run `python unit-tests.py -v`
+## Plugins
+1. [boxplot-r: Interactive boxplot visualization from a Shiny app(r version).](http://docs.3steps.cn/docs/plugins/boxplot-r.html)
+2. [corrplot-r: Interactive correlation plot visualization from a Shiny app(r version).](http://docs.3steps.cn/docs/plugins/corrplot-r.html)
+3. [data-table-js: Another interactive data table. It is based on datatables js library.](http://docs.3steps.cn/docs/plugins/data-table-js.html)
+4. [density-plot: Interactive density plot visualization from a Shiny app(r version).](http://docs.3steps.cn/docs/plugins/density-plot.html)
+5. [group-boxplot: Interactive group-boxplot visualization from a Shiny app(r version).](http://docs.3steps.cn/docs/plugins/group-boxplot.html)
+6. [pivot-table-js: Interactive pivot-table and pivot-chart. It is based on webdatarocks and highcharts.](http://docs.3steps.cn/docs/plugins/pivot-table-js.html)
+7. [rocket-plot-r: Interactive rocket plot visualization from a Shiny app(r version).](http://docs.3steps.cn/docs/plugins/rocket-plot-r.html)
+8. [stack-barplot-r: Interactive stack barplot visualization from a Shiny app(r version).](http://docs.3steps.cn/docs/plugins/stack-barplot-r.html)
+9. [upset-r: Interactive upset plot visualization from a Shiny app(r version).](http://docs.3steps.cn/docs/plugins/upset-r.html)
+10. [violin-plot-r: Interactive violin plot visualization from a Shiny app(r version).](http://docs.3steps.cn/docs/plugins/violin-plot-r.html)

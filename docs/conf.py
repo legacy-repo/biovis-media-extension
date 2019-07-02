@@ -12,15 +12,14 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os
-import sys
-import sphinx_bootstrap_theme
-sys.path.insert(0, os.path.abspath('../'))
+# import os
+# import sys
+# sys.path.insert(0, os.path.abspath('.'))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'choppy-media-extension'
+project = 'Choppy Media Extension'
 copyright = '2019, Jingcheng Yang'
 author = 'Jingcheng Yang'
 
@@ -41,13 +40,12 @@ release = ''
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
-    'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
+    'sphinx.ext.githubpages',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -72,7 +70,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
@@ -83,8 +81,7 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'bootstrap'
-html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
+html_theme = 'alabaster'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -111,7 +108,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'choppy-media-extensiondoc'
+htmlhelp_basename = 'ChoppyMediaExtensiondoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -138,7 +135,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'choppy-media-extension.tex', 'choppy-media-extension Documentation',
+    (master_doc, 'ChoppyMediaExtension.tex', 'Choppy Media Extension Documentation',
      'Jingcheng Yang', 'manual'),
 ]
 
@@ -148,7 +145,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'choppy-media-extension', 'choppy-media-extension Documentation',
+    (master_doc, 'choppymediaextension', 'Choppy Media Extension Documentation',
      [author], 1)
 ]
 
@@ -159,8 +156,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'choppy-media-extension', 'choppy-media-extension Documentation',
-     author, 'choppy-media-extension', 'One line description of project.',
+    (master_doc, 'ChoppyMediaExtension', 'Choppy Media Extension Documentation',
+     author, 'ChoppyMediaExtension', 'One line description of project.',
      'Miscellaneous'),
 ]
 
