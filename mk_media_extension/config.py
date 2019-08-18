@@ -36,6 +36,13 @@ def check_oss_config():
         raise Exception("You need to config oss section in choppy.conf")
 
 
+def check_proxy_config():
+    if proxy_admin_url and reverse_proxy_url:
+        return True
+    else:
+        raise Exception("You need to config proxy section in choppy.conf")
+
+
 if conf_path:
     config.read(conf_path, encoding="utf-8")
 
@@ -43,8 +50,13 @@ if conf_path:
     access_key = config.get('oss', 'access_key')
     access_secret = config.get('oss', 'access_secret')
     endpoint = config.get('oss', 'endpoint')
-
     check_oss_config()
+
+    proxy_admin_url = config.get('proxy', 'proxy_admin_url')
+    reverse_proxy_url = config.get('proxy', 'reverse_proxy_url')
+    check_proxy_config()
+else:
+    raise Exception("Not found config file for choppy.")
 
 
 def get_oss_bin():

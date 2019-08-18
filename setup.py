@@ -46,6 +46,9 @@ setup(
     entry_points={
         'markdown.extensions': [
             'mk_media_extension = mk_media_extension.extension:ChoppyPluginExtension'
-        ]
+        ],
+        "console_scripts": [
+            "plugin-server = api_server.server:run_server"
+        ],
     }
 )

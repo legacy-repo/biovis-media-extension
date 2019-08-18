@@ -12,7 +12,7 @@ import requests
 import logging
 import collections
 import pkg_resources
-from mk_media_extension.models import add_plugin, get_plugin
+from api_server.modules.plugin.models import add_plugin, get_plugin
 from mk_media_extension.docker_mgmt import Docker
 from mk_media_extension.process_mgmt import Process
 from mk_media_extension.utils import (check_dir, copy_and_overwrite,
@@ -20,6 +20,7 @@ from mk_media_extension.utils import (check_dir, copy_and_overwrite,
                                       find_free_port, get_local_abs_fpath)
 from mk_media_extension.file_mgmt import run_copy_files, get_oss_fsize
 from mk_media_extension.request_mgmt import requests_retry_session
+from mk_media_extension.proxy import registry_service_route
 
 
 class Reader:
@@ -739,6 +740,7 @@ class BasePlugin:
     def _launch_server_plugin(self):
         # write metadata to plugin.db
         metadata = {}
+        metadata['proxy_url'] = None
         metadata['name'] = self.plugin_name
         metadata['command'] = '@{}({})'.format(self.plugin_name, self._get_args(**self.context))
         metadata['command_md5'] = self._md5(metadata['command'])
@@ -757,16 +759,28 @@ class BasePlugin:
                 metadata['process_id'] = process_id
                 metadata['access_url'] = access_url
                 metadata['workdir'] = workdir
+                if self.reverse_proxy_url:
+                    proxy_url = registry_service_route(access_url, metadata['command_md5'])
+                    metadata['proxy_url'] = proxy_url
+                    access_url = proxy_url
+                else:
+                    metadata['proxy_url'] = None
 
             if access_url:
                 add_plugin(**metadata, plugin_db=self.plugin_db)
             self.logger.info("Launching plugin server(%s) successfully, Serving on %s.\n" % (self.plugin_name, access_url))
+
             return access_url, workdir
         else:
             self.logger.info("Command doesn't changed, so skip it.")
+            if self.reverse_proxy_url:
+                access_url = plugin.proxy_url
+            else:
+                access_url = plugin.access_url
+
             self.logger.info("Launching plugin server(%s) successfully, "
-                             "Serving on %s.\n" % (self.plugin_name, plugin.access_url))
-            return plugin.access_url, plugin.workdir
+                             "Serving on %s.\n" % (self.plugin_name, access_url))
+            return access_url, plugin.workdir
 
     def index_js_lst(self, js_lst):
         javascript = self._get_index_lst(js_lst, 'js')
@@ -812,7 +826,6 @@ class BasePlugin:
             div_component = '<div id="%s" class="%s choppy-plot-container">Loading...</div>'\
                             % (div_id, self.plugin_name)
 
-        # Get network path
         net_path_lst = self.index_js_lst(required_js_lst)
 
         # Javascript function specification: the first two of js function must be div_id and configs.

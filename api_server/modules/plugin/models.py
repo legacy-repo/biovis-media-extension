@@ -1,12 +1,19 @@
-# -*- coding:utf-8 -*-
-from __future__ import unicode_literals
+# -*- coding: utf-8 -*-
+"""
+    mk_media_extension.api_server.modules.plugin.models
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    Plugin database models.
+
+    :copyright: © 2019 by the Choppy team.
+    :license: AGPL, see LICENSE.md for more details.
+"""
 
 import os
 import logging
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Column, String, Boolean, Integer
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import create_engine
 from mk_media_extension.utils import check_dir
 from mk_media_extension.process_mgmt import Process
 
@@ -24,10 +31,12 @@ class Plugin(Base):
     container_id = Column(String(64), nullable=True)
     process_id = Column(String(8), nullable=True)
     access_url = Column(String(255), nullable=False)
+    proxy_url = Column(String(255), nullable=True)
     workdir = Column(String(255), nullable=True)
 
 
 def init_db(plugin_db):
+    from sqlalchemy import create_engine
     # Create an engine that stores data in the local directory's
     # sqlalchemy_example.db file.
     check_dir(os.path.dirname(plugin_db), skip=True)
