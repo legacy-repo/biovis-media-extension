@@ -15,9 +15,9 @@ from flask_restplus import Api
 
 api_v1 = Api(
     version='v1.0',
-    title="Choppy for Reproducible Omics Pipeline.",
+    title="The API Service for Plugin Engine.",
     description=(
-        "This documentation describes the Choppy API."
+        "This documentation describes the Plugin Engine API."
     ),
 )
 

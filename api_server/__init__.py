@@ -33,7 +33,8 @@ def create_app(flask_config_name=None, **kwargs):
     import threading
     threading.stack_size(2 * 1024 * 1024)
 
-    app = Flask(__name__, **kwargs)
+    static_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static')
+    app = Flask(__name__, static_folder=static_folder, **kwargs)
 
     env_flask_config_name = os.getenv('FLASK_CONFIG')
     if not env_flask_config_name and flask_config_name is None:

@@ -6,7 +6,6 @@ import sys
 import re
 import uuid
 
-import shutil
 import hashlib
 import requests
 import logging
@@ -87,9 +86,6 @@ class BasePlugin:
         # kwargs = {'a': 1, 'b': 2, 'c': 3}
         self._context = context
 
-        # write metadata to plugin.db
-        self.metadata = {}
-
         # oss config
         self.oss_bin = config.get("OSS_BIN")
         self.access_key = config.get("ACCESS_KEY")
@@ -107,23 +103,13 @@ class BasePlugin:
         self.enable_iframe = config.get("ENABLE_IFRAME")
         self.wait_server_seconds = config.get("WAIT_SERVER_SECONDS")
         self.backoff_factor = config.get("BACKOFF_FACTOR")
+        self.static_url = config.get("STATIC_URL")
 
         self.logger = logging.getLogger('choppy.mk-media-extension.plugin')
-        if self.net_dir:
-            temp_dir = os.path.join(self.net_dir, '.choppy-media-extension')
-        else:
-            temp_dir = os.path.join('/tmp', 'choppy-media-extension')
-            self.logger.warn("No net_dir, so use temp directory(%s)." % temp_dir)
-            # Clean up the temp directory
-            # TODO: rmtree will cause other choppy process failed, how to solve it?
-            shutil.rmtree(temp_dir, ignore_errors=True)
 
-        self.plugin_db = os.path.join(temp_dir, 'plugin.db')
-
-        self.tmp_plugin_dir = os.path.join(temp_dir, str(uuid.uuid1()))
         # Fix bug: use plugin name as global dir name instead of random file name
         #          for saving all files from a plugin.
-        self.plugin_data_dir = os.path.join(self.tmp_plugin_dir, self.plugin_name)
+        self.plugin_data_dir = os.path.join(self.net_dir, self.plugin_name)
         check_dir(self.plugin_data_dir, skip=True)
 
         self.ftype2dir = {
@@ -158,6 +144,22 @@ class BasePlugin:
 
         # Set reader for README.md
         self.reader = self.set_help()
+
+        # write metadata to plugin.db
+        command = '@{}({})'.format(self.plugin_name, self._get_args(**self.context))
+        self.metadata = {
+            "name": self.plugin_name,
+            "command": command,
+            "command_md5": self._md5("command"),
+            "is_server": self.is_server,
+            "container_id": None,
+            "process_id": None,
+            "access_url": None,
+            "proxy_url": None,
+            "workdir": None,
+            "active": False,
+            "message": None,
+        }
 
     @classmethod
     def get_ftype(cls, fext):
@@ -562,6 +564,7 @@ class BasePlugin:
             self.logger.warning('inject %s error, %s is not supported.' % (net_path, ftype))
         else:
             # checkDeps is defined in load-script.js(see mkdocs theme)
+            net_path = self._gen_static_url(net_path)
             script = "<script>checkDeps('%s', '%s', false)</script>" % (net_path, ftype)
             self._rendered_js.append(script)
 
@@ -644,6 +647,10 @@ class BasePlugin:
         for item in files:
             self.set_index(item.get('key'), item.get('value'), item.get('type'))
 
+    def _set_metadata(self, key, value):
+        if key in self.metadata.keys() and value:
+            self.metadata[key] = value
+
     def multiqc(self, analysis_dir):
         import sys
         from subprocess import CalledProcessError, PIPE, Popen
@@ -656,11 +663,6 @@ class BasePlugin:
         multiqc_cmd = ['multiqc', '-o', output_dir, '--filename',
                        output_fname, analysis_dir]
 
-        self.metadata['name'] = self.plugin_name
-        self.metadata['command'] = '@{}({})'.format(self.plugin_name, self._get_args(**self.context))
-        self.metadata['command_md5'] = self._md5(self.metadata['command'])
-        self.metadata['is_server'] = self.is_server
-
         try:
             process = Popen(multiqc_cmd, stdout=PIPE)
             while process.poll() is None:
@@ -671,7 +673,7 @@ class BasePlugin:
                 sys.stdout.flush()
                 process.poll()
 
-            self.metadata['access_url'] = report_output
+            self._set_metadata("access_url", report_output)
 
             self.logger.info("Running multiqc plugin (%s) successfully, "
                              "Output in %s.\n" % (self.plugin_name, report_output))
@@ -715,7 +717,10 @@ class BasePlugin:
         if self.is_server:
             if self.plugin_dir:
                 src_code_dir = os.path.join(self.plugin_dir, self.plugin_name)
-                process = Process(command_dir=src_code_dir, workdir=self.tmp_plugin_dir)
+                server_root = os.path.join(self.net_dir, 'server')
+                check_dir(server_root, skip=True)
+
+                process = Process(command_dir=src_code_dir, workdir=server_root)
                 port = find_free_port()
                 updated_context = self.update_context(**self.context)
                 process_id = process.run_command(domain=self.domain, port=port, **updated_context)
@@ -731,38 +736,39 @@ class BasePlugin:
         md5.update(string.encode(encoding='utf-8'))
         return md5.hexdigest()
 
+    def _get_proxy_url(self, access_url):
+        from mk_media_extension.proxy import registry_service_route
+        proxy_url = registry_service_route(access_url, self.metadata['command_md5'])
+        proxy_url = proxy_url.strip('/') + '/'
+        return proxy_url
+
     def _get_args(self, **kwargs):
         sorted_kwargs = collections.OrderedDict(sorted(kwargs.items()))
         return ', '.join('%s=%r' % x for x in sorted_kwargs.items())
 
-    def _launch_server_plugin(self):
-        self.metadata['proxy_url'] = None
-        self.metadata['name'] = self.plugin_name
-        self.metadata['command'] = '@{}({})'.format(self.plugin_name, self._get_args(**self.context))
-        self.metadata['command_md5'] = self._md5(self.metadata['command'])
+    def _strip_prefix(self, string, prefix):
+        return '/' + string.replace(prefix, '').strip('/')
 
-        self.metadata['is_server'] = self.is_server
+    def _launch_server_plugin(self):
         container_id, access_url = self.docker()
         if container_id and access_url:
-            self.metadata['container_id'] = container_id
-            self.metadata['access_url'] = access_url
+            proxy_url = self._get_proxy_url(access_url)
+            self._set_metadata("container_id", container_id)
+            self._set_metadata("access_url", access_url)
             # TODO: add workdir for a docker container
-            # metadata['workdir'] = workdir
+            # metadata['workdir'] = self._strip_prefix(workdir, self.net_dir)
+            self._set_metadata("proxy_url", proxy_url)
         else:
-            from mk_media_extension.proxy import registry_service_route
-
             process_id, access_url, workdir = self.server()
-            self.metadata['process_id'] = process_id
-            self.metadata['access_url'] = access_url
-            self.metadata['workdir'] = workdir
-            proxy_url = registry_service_route(access_url, self.metadata['command_md5'])
-            proxy_url = proxy_url.strip('/') + '/'
-            self.metadata['proxy_url'] = proxy_url
-            access_url = proxy_url
+            proxy_url = self._get_proxy_url(access_url)
+            self._set_metadata("process_id", process_id)
+            self._set_metadata("access_url", access_url)
+            self._set_metadata("workdir", self._strip_prefix(workdir, self.net_dir))
+            self._set_metadata("proxy_url", proxy_url)
 
-        self.logger.info("Launching plugin server(%s) successfully, Serving on %s.\n" % (self.plugin_name, access_url))
+        self.logger.info("Launching plugin server(%s) successfully, Serving on %s.\n" % (self.plugin_name, proxy_url))
 
-        return access_url, workdir
+        return proxy_url, workdir
 
     def index_js_lst(self, js_lst):
         javascript = self._get_index_lst(js_lst, 'js')
@@ -808,7 +814,7 @@ class BasePlugin:
             div_component = '<div id="%s" class="%s choppy-plot-container">Loading...</div>'\
                             % (div_id, self.plugin_name)
 
-        net_path_lst = self.index_js_lst(required_js_lst)
+        net_path_lst = [self._gen_static_url(url) for url in self.index_js_lst(required_js_lst)]
 
         # Javascript function specification: the first two of js function must be div_id and configs.
         args = list(args)
@@ -955,8 +961,17 @@ class BasePlugin:
         iframe_tag = '<iframe src="{}" seamless frameborder="0" \
                       scrolling="no" class="iframe" \
                       name="{}" width="100%"></iframe>'
-        iframe = iframe_tag.format(self.get_net_path(key), self.plugin_name)
+        access_url = self._gen_static_url(self.get_net_path(key))
+        self._set_metadata("access_url", access_url)
+
+        iframe = iframe_tag.format(access_url, self.plugin_name)
         return iframe
+
+    def _gen_static_url(self, static_file):
+        """Get accessable url for static file.
+        """
+        self.logger.debug("Static URL: %s/%s" % (self.static_url, static_file))
+        return os.path.join(self.static_url, static_file.strip('/'))
 
     def _wrapper_render(self):
         """
@@ -1022,15 +1037,11 @@ class BasePlugin:
         return code_lst
 
     def _get_virtual_path(self, path):
-        virtual_path = path.replace(self.tmp_plugin_dir, '')
-        # May be the prefix is net_dir not tmp_plugin_dir
         # When the user call self.get_net_path, the prefix of the path will be self.net_dir
         # So need to add this code.
-        virtual_path = virtual_path.replace(self.net_dir, '').strip('/')
+        virtual_path = path.replace(self.net_dir, '').strip('/')
         self.logger.debug('Raw path: %s, virtual_path: %s' %
                           (path, virtual_path))
-        self.logger.debug('tmp_plugin_dir: %s, net_dir: %s' %
-                          (self.tmp_plugin_dir, self.net_dir))
 
         return virtual_path
 
