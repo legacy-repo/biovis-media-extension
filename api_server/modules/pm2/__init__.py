@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-    api_server.modules.plugin
-    ~~~~~~~~~~~~~~~~~~~~~~~~~
+    api_server.modules.pm2
+    ~~~~~~~~~~~~~~~~~~~~~~
 
-    Plugin Module.
+    PM2 Module.
 
     :copyright: © 2019 by the Choppy team.
     :license: AGPL, see LICENSE.md for more details.
@@ -23,4 +23,4 @@ def init_app(app, **kwargs):
     api_v1.add_namespace(resources.api)
 
 
-api = Namespace('plugins', description='Choppy report related operations')
+api = Namespace('pm2', description='Production process manager(pm2) related operations')

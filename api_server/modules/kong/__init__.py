@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-    api_server.modules.plugin
-    ~~~~~~~~~~~~~~~~~~~~~~~~~
+    api_server.modules.kong
+    ~~~~~~~~~~~~~~~~~~~~~~~
 
-    Plugin Module.
+    Kong Module.
 
     :copyright: © 2019 by the Choppy team.
     :license: AGPL, see LICENSE.md for more details.
@@ -23,4 +23,4 @@ def init_app(app, **kwargs):
     api_v1.add_namespace(resources.api)
 
 
-api = Namespace('plugins', description='Choppy report related operations')
+api = Namespace('kong', description='Kong api gateway related operations.')

@@ -4,7 +4,12 @@ import os
 import json
 import logging
 import requests
-from mk_media_extension import config
+from flask import current_app
+
+
+class config:
+    proxy_admin_url = current_app.config.get("PROXY_ADMIN_URL")
+    reverse_proxy_url = current_app.config.get("REVERSE_PROXY_URL")
 
 
 def pretty_json(obj):
@@ -107,20 +112,23 @@ def status(kong):
 
 
 @context(config)
-def registry_service_route(kong, upstream_url, cmd_md5_as_path):
+def registry_service_route(kong, upstream_url, uuid_as_path):
     """Create Route Associated to a Specific Service.
 
-    cmd_md5_as_path: command md5 as a service name or route path.
+    uuid_as_path: command md5 as a service name or route path.
     """
+    # Clean old route and service.
+    delete_service_route(uuid_as_path)
+
     json = {
         "url": upstream_url,
-        "name": cmd_md5_as_path
+        "name": uuid_as_path
     }
     r = kong.post("/services", json=json)
     response = handle_json_response(r)
     service_id = response.get("id")
     if service_id:
-        path = "/" + cmd_md5_as_path
+        path = "/" + uuid_as_path
         json = {
             "paths": [path, ]
         }
@@ -141,6 +149,14 @@ def query_routes(kong, service_name):
 
 
 @context(config)
+def query_service(kong, service_name):
+    """Query a Specific Service by Path.
+    """
+    r = kong.get("/services/%s" % service_name)
+    return handle_json_response(r)
+
+
+@context(config)
 def delete_route(kong, route_id):
     """Delete a route.
     """
@@ -149,21 +165,25 @@ def delete_route(kong, route_id):
 
 @context(config)
 def delete_service(kong, service_name):
-    """
+    """Delete a service.
     """
     return kong.delete("/services/%s" % service_name)
 
 
 @context(config)
-def delete_service_route(kong, cmd_md5_as_path):
+def delete_service_route(kong, uuid_as_path):
     """Delete Route and a Specific Service.
     """
-    routes = query_routes(cmd_md5_as_path)
-    for route in routes:
-        route_id = route.get("id")
-        delete_route(route_id)
-    delete_service(cmd_md5_as_path)
-
+    try:
+        routes = query_routes(uuid_as_path)
+        for route in routes:
+            route_id = route.get("id")
+            delete_route(route_id)
+        delete_service(uuid_as_path)
+        message = "success"
+    except RuntimeError as err:
+        message = str(err)
+    return message
 
 # Handle all routes
 @context(config)
@@ -201,3 +221,11 @@ def delete_services(kong):
     for service in services:
         service_id = service.get("id")
         delete_service(service_id)
+
+
+@context(config)
+def update_service(kong, upstream_url, uuid_as_path):
+    json = {
+        "url": upstream_url
+    }
+    kong.put("/services/%s" % uuid_as_path, json=json)

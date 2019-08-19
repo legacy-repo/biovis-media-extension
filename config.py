@@ -1,5 +1,15 @@
-# pylint: disable=too-few-public-methods,invalid-name,missing-docstring
+# -*- coding:utf-8 -*-
 import os
+import sys
+
+
+def get_oss_bin():
+    oss_bin = ''
+    if sys.platform == 'darwin':
+        oss_bin = os.path.join(os.path.dirname(__file__), "mk_media_extension", "lib", 'ossutilmac64')
+    else:
+        oss_bin = os.path.join(os.path.dirname(__file__), "mk_media_extension", "lib", 'ossutil64')
+    return oss_bin
 
 
 class BaseConfig(object):
@@ -47,14 +57,11 @@ class BaseConfig(object):
 
     ENABLED_MODULES = (
         # 'auth',
-
         # 'users',
         # 'teams',
         'plugin',
         'api',
     )
-
-    STATIC_ROOT = os.path.join(PROJECT_ROOT, 'static')
 
     SWAGGER_UI_JSONEDITOR = True
     SWAGGER_UI_OAUTH_CLIENT_ID = 'documentation'
@@ -68,10 +75,32 @@ class BaseConfig(object):
     # Enable cache
     CACHE_TYPE = 'simple'
 
+    # OSS
+    ACCESS_KEY = 'OSS_ACCESS_KEY'
+    ACCESS_SECRET = 'OSS_ACCESS_SECRET'
+    ENDPOINT = 'OSS_ENDPOINT'
+    OSS_BIN = get_oss_bin()
+
+    # Proxy
+    PROXY_ADMIN_URL = 'http://localhost:8001'
+    REVERSE_PROXY_URL = 'http://localhost:8000'
+
+    # Plugin Engine
+    SYNC_OSS = True
+    SYNC_HTTP = True
+    SYNC_FTP = True
+    TARGET_FSIZE = 10
+    PROTOCOL = 'http'
+    DOMAIN = '192.168.199.227'
+    ENABLE_IFRAME = True
+    WAIT_SERVER_SECONDS = 5
+    BACKOFF_FACTOR = 3
+
+    STATIC_ROOT = os.path.join(PROJECT_ROOT, 'api_server', 'static')
+
 
 class ProductionConfig(BaseConfig):
     SECRET_KEY = os.getenv('EXAMPLE_API_SERVER_SECRET_KEY')
-    SQLALCHEMY_DATABASE_URI = os.getenv('EXAMPLE_API_SERVER_SQLALCHEMY_DATABASE_URI')
 
 
 class DevelopmentConfig(BaseConfig):

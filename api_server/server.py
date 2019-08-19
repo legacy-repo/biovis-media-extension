@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 def run_server(debug, host, port, framework, swagger):
     """Launch an api server."""
     from api_server import create_app
-    flask_app = create_app(flask_config_name='production')
+    flask_app = create_app(flask_config_name='production', static_url_path='')
 
     if swagger:
         from api_server.helper import register_helper

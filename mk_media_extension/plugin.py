@@ -12,15 +12,13 @@ import requests
 import logging
 import collections
 import pkg_resources
-from api_server.modules.plugin.models import add_plugin, get_plugin
 from mk_media_extension.docker_mgmt import Docker
 from mk_media_extension.process_mgmt import Process
 from mk_media_extension.utils import (check_dir, copy_and_overwrite,
                                       BashColors, get_candidate_name,
                                       find_free_port, get_local_abs_fpath)
-from mk_media_extension.file_mgmt import run_copy_files, get_oss_fsize
+from mk_media_extension.file_mgmt import OSS
 from mk_media_extension.request_mgmt import requests_retry_session
-from mk_media_extension.proxy import registry_service_route
 
 
 class Reader:
@@ -75,32 +73,40 @@ class BasePlugin:
     """
     docker_image = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, context, net_dir, config):
         """
         Initialize BasePlugin class.
 
         :param: context: a dict that contains all plugin arguments.
         :param: net_dir: plugin used it to get relative network path for all files that are needed by html. if net_dir is None, plugin will upload all files to qiniu and get a qiniu url.
-        :param: sync_oss: whether sync oss.
-        :param: sync_http: whether sync http.
-        :param: sync_ftp: whether sync ftp.
-        :param: file_size: file size(MB).
+        :param: config: flask config object.
         """
-        print("BasePlugin: %s, %s" % (str(args), str(kwargs)))
-        self.net_dir = kwargs.get('net_dir', None)
-        self.sync_oss = kwargs.get('sync_oss', True)
-        self.sync_http = kwargs.get('sync_http', True)
-        self.sync_ftp = kwargs.get('sync_ftp', True)
-        self.target_fsize = kwargs.get('target_fsize', 10)
-        self.domain = kwargs.get('domain', '127.0.0.1')
-        self.protocol = kwargs.get('protocol', 'http')
-        self.enable_iframe = kwargs.get('enable_iframe', True)
-        self.wait_server_seconds = kwargs.get('wait_server_seconds', 5)
-        self.backoff_factor = kwargs.get('backoff_factor', 3)
+        self.net_dir = net_dir
         # Parse args from markdown new syntax. e.g.
         # @scatter_plot(a=1, b=2, c=3)
         # kwargs = {'a': 1, 'b': 2, 'c': 3}
-        self._context = kwargs.get('context', {})
+        self._context = context
+
+        # write metadata to plugin.db
+        self.metadata = {}
+
+        # oss config
+        self.oss_bin = config.get("OSS_BIN")
+        self.access_key = config.get("ACCESS_KEY")
+        self.access_secret = config.get("ACCESS_SECRET")
+        self.endpoint = config.get("ENDPOINT")
+        self.oss = OSS(self.oss_bin, self.access_key, self.access_secret, self.endpoint)
+
+        # Plugin engine config
+        self.target_fsize = config.get("TARGET_FSIZE")
+        self.sync_oss = config.get("SYNC_OSS")
+        self.sync_http = config.get("SYNC_HTTP")
+        self.sync_ftp = config.get("SYNC_FTP")
+        self.protocol = config.get("PROTOCOL")
+        self.domain = config.get("DOMAIN")
+        self.enable_iframe = config.get("ENABLE_IFRAME")
+        self.wait_server_seconds = config.get("WAIT_SERVER_SECONDS")
+        self.backoff_factor = config.get("BACKOFF_FACTOR")
 
         self.logger = logging.getLogger('choppy.mk-media-extension.plugin')
         if self.net_dir:
@@ -296,7 +302,7 @@ class BasePlugin:
         if protocol == 'http' or protocol == 'https':
             content_length = requests.get(path, stream=True).headers['Content-length']
         elif protocol == 'oss':
-            content_length = get_oss_fsize(path)  # MB
+            content_length = self.oss.get_oss_fsize(path)  # MB
         elif protocol == 'file':
             if os.path.isfile(path):
                 content_length = os.path.getsize(path)
@@ -509,8 +515,8 @@ class BasePlugin:
                 # TODO: May be copy_and_overwrite will make some mistakes.
                 copy_and_overwrite(path, dest_filepath, is_file=is_file)
             elif protocol == 'oss':
-                run_copy_files(path, dest_filepath, self.plugin_data_dir,
-                               recursive=False, silent=True)
+                self.oss.run_copy_files(path, dest_filepath, self.plugin_data_dir,
+                                        recursive=False, silent=True)
             elif protocol == 'http' or protocol == 'https':
                 r = requests.get(net_path)
                 if r.status_code == 200:
@@ -649,38 +655,30 @@ class BasePlugin:
         check_dir(output_dir, skip=True, force=True)
         multiqc_cmd = ['multiqc', '-o', output_dir, '--filename',
                        output_fname, analysis_dir]
-        # write metadata to plugin.db
-        metadata = {}
-        metadata['name'] = self.plugin_name
-        metadata['command'] = '@{}({})'.format(self.plugin_name, self._get_args(**self.context))
-        metadata['command_md5'] = self._md5(metadata['command'])
-        metadata['is_server'] = self.is_server
-        plugin = get_plugin(metadata['command_md5'], self.plugin_db)
-        if not plugin:
-            try:
-                process = Popen(multiqc_cmd, stdout=PIPE)
-                while process.poll() is None:
-                    output = process.stdout.readline()
-                    if output == '' and process.poll() is not None:
-                        break
-                    self.logger.info(output.strip())
-                    sys.stdout.flush()
-                    process.poll()
 
-                metadata['access_url'] = report_output
-                add_plugin(**metadata, plugin_db=self.plugin_db)
+        self.metadata['name'] = self.plugin_name
+        self.metadata['command'] = '@{}({})'.format(self.plugin_name, self._get_args(**self.context))
+        self.metadata['command_md5'] = self._md5(self.metadata['command'])
+        self.metadata['is_server'] = self.is_server
 
-                self.logger.info("Running multiqc plugin (%s) successfully, "
-                                 "Output in %s.\n" % (self.plugin_name, report_output))
-                return report_output
-            except CalledProcessError as e:
-                self.logger.critical(e)
-                return None
-        else:
-            self.logger.info("Command doesn't changed, so skip it.")
-            self.logger.info("Running multiqc plugin (%s) successfully"
-                             "Output in %s.\n" % (self.plugin_name, plugin.access_url))
-            return plugin.access_url
+        try:
+            process = Popen(multiqc_cmd, stdout=PIPE)
+            while process.poll() is None:
+                output = process.stdout.readline()
+                if output == '' and process.poll() is not None:
+                    break
+                self.logger.info(output.strip())
+                sys.stdout.flush()
+                process.poll()
+
+            self.metadata['access_url'] = report_output
+
+            self.logger.info("Running multiqc plugin (%s) successfully, "
+                             "Output in %s.\n" % (self.plugin_name, report_output))
+            return report_output
+        except CalledProcessError as e:
+            self.logger.critical(e)
+            return None
 
     def bokeh(self):
         pass
@@ -738,49 +736,33 @@ class BasePlugin:
         return ', '.join('%s=%r' % x for x in sorted_kwargs.items())
 
     def _launch_server_plugin(self):
-        # write metadata to plugin.db
-        metadata = {}
-        metadata['proxy_url'] = None
-        metadata['name'] = self.plugin_name
-        metadata['command'] = '@{}({})'.format(self.plugin_name, self._get_args(**self.context))
-        metadata['command_md5'] = self._md5(metadata['command'])
+        self.metadata['proxy_url'] = None
+        self.metadata['name'] = self.plugin_name
+        self.metadata['command'] = '@{}({})'.format(self.plugin_name, self._get_args(**self.context))
+        self.metadata['command_md5'] = self._md5(self.metadata['command'])
 
-        plugin = get_plugin(metadata['command_md5'], self.plugin_db)
-        if not plugin:
-            metadata['is_server'] = self.is_server
-            container_id, access_url = self.docker()
-            if container_id and access_url:
-                metadata['container_id'] = container_id
-                metadata['access_url'] = access_url
-                # TODO: add workdir for a docker container
-                # metadata['workdir'] = workdir
-            else:
-                process_id, access_url, workdir = self.server()
-                metadata['process_id'] = process_id
-                metadata['access_url'] = access_url
-                metadata['workdir'] = workdir
-                if self.reverse_proxy_url:
-                    proxy_url = registry_service_route(access_url, metadata['command_md5'])
-                    metadata['proxy_url'] = proxy_url
-                    access_url = proxy_url
-                else:
-                    metadata['proxy_url'] = None
-
-            if access_url:
-                add_plugin(**metadata, plugin_db=self.plugin_db)
-            self.logger.info("Launching plugin server(%s) successfully, Serving on %s.\n" % (self.plugin_name, access_url))
-
-            return access_url, workdir
+        self.metadata['is_server'] = self.is_server
+        container_id, access_url = self.docker()
+        if container_id and access_url:
+            self.metadata['container_id'] = container_id
+            self.metadata['access_url'] = access_url
+            # TODO: add workdir for a docker container
+            # metadata['workdir'] = workdir
         else:
-            self.logger.info("Command doesn't changed, so skip it.")
-            if self.reverse_proxy_url:
-                access_url = plugin.proxy_url
-            else:
-                access_url = plugin.access_url
+            from mk_media_extension.proxy import registry_service_route
 
-            self.logger.info("Launching plugin server(%s) successfully, "
-                             "Serving on %s.\n" % (self.plugin_name, access_url))
-            return access_url, plugin.workdir
+            process_id, access_url, workdir = self.server()
+            self.metadata['process_id'] = process_id
+            self.metadata['access_url'] = access_url
+            self.metadata['workdir'] = workdir
+            proxy_url = registry_service_route(access_url, self.metadata['command_md5'])
+            proxy_url = proxy_url.strip('/') + '/'
+            self.metadata['proxy_url'] = proxy_url
+            access_url = proxy_url
+
+        self.logger.info("Launching plugin server(%s) successfully, Serving on %s.\n" % (self.plugin_name, access_url))
+
+        return access_url, workdir
 
     def index_js_lst(self, js_lst):
         javascript = self._get_index_lst(js_lst, 'js')
