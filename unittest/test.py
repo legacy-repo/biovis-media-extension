@@ -1,9 +1,9 @@
-from mk_media_extension.extension import ChoppyPluginExtension
+from biovis_media_extension.extension import BioVisPluginExtension
 
 
 def test(text):
     import markdown
-    plugin = ChoppyPluginExtension(configs={})
+    plugin = BioVisPluginExtension(configs={})
     print(markdown.markdown(text, extensions=[plugin]))
 
 

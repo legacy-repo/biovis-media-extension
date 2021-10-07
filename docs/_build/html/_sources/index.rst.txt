@@ -1,19 +1,19 @@
-.. Choppy Media Extension documentation master file, created by
+.. Biovis Media Extension documentation master file, created by
    sphinx-quickstart on Tue Jul  2 15:55:57 2019.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Choppy Media Extension's documentation!
+Welcome to Biovis Media Extension's documentation!
 ==================================================
 
 Summary
 ~~~~~~~
-Choppy-media-extension is an extension for Python-Markdown.
+Biovis-media-extension is an extension for Python-Markdown.
 It can launch dynamic plot or preprocess multimedia.
 
 Dependencies
 ~~~~~~~~~~~~
-Choppy requires Python 3+ and Python-Markdown to be loaded
+Biovis requires Python 3+ and Python-Markdown to be loaded
 in your environment in order for full functionality to work.
 
 Syntax
@@ -31,7 +31,7 @@ Installation
 ~~~~~~~~~~~~
 ::
 
-  pip install mk-media-extension
+  pip install biovis-media-extension
 
 
 Plugins

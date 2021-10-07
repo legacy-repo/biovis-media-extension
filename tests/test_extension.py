@@ -2,7 +2,7 @@ import unittest
 import markdown
 
 
-class TestChoppyPluginExtension(unittest.TestCase):
+class TestBioVisPluginExtension(unittest.TestCase):
     def test_vanilla(self):
         text = 'I love &icon-html5; and &icon-css3;.'
         expected = '<p>I love <i aria-hidden="true" class="icon-html5"></i> and <i aria-hidden="true" class="icon-css3"></i>.</p>'

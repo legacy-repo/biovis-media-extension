@@ -19,7 +19,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Choppy Media Extension'
+project = 'Biovis Media Extension'
 copyright = '2019, Jingcheng Yang'
 author = 'Jingcheng Yang'
 
@@ -108,7 +108,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'ChoppyMediaExtensiondoc'
+htmlhelp_basename = 'BioVisMediaExtensiondoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -135,7 +135,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'ChoppyMediaExtension.tex', 'Choppy Media Extension Documentation',
+    (master_doc, 'BioVisMediaExtension.tex', 'Biovis Media Extension Documentation',
      'Jingcheng Yang', 'manual'),
 ]
 
@@ -145,7 +145,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'choppymediaextension', 'Choppy Media Extension Documentation',
+    (master_doc, 'biovismediaextension', 'Biovis Media Extension Documentation',
      [author], 1)
 ]
 
@@ -156,8 +156,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'ChoppyMediaExtension', 'Choppy Media Extension Documentation',
-     author, 'ChoppyMediaExtension', 'One line description of project.',
+    (master_doc, 'BioVisMediaExtension', 'Biovis Media Extension Documentation',
+     author, 'BioVisMediaExtension', 'One line description of project.',
      'Miscellaneous'),
 ]
 

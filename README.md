@@ -4,16 +4,16 @@
 >
 > Date: 2018-12-13
 
-# Choppy Media Extension
+# Biovis Media Extension
 
 ## Summary
 Display dynamic plot or more multimedia content in markdown.
 
-Choppy-media-extension is an extension for Python-Markdown. It can launch dynamic plot or preprocess multimedia.
+Biovis-media-extension is an extension for Python-Markdown. It can launch dynamic plot or preprocess multimedia.
 
 ## Dependencies
 
-Choppy requires Python 3+ and Python-Markdown to be loaded in your environment in order for full functionality to work.
+Biovis requires Python 3+ and Python-Markdown to be loaded in your environment in order for full functionality to work.
 
 ## Syntax
 ```
@@ -28,7 +28,7 @@ Such as @plugin-name(arg1=value, arg2=value)
 ## Installation
 
 ```
-pip install mk-media-extension
+pip install biovis-media-extension
 ```
 
 ## Plugins
