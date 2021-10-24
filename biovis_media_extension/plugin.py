@@ -90,12 +90,12 @@ class BasePlugin:
         self.sync_oss = kwargs.get('sync_oss', True)
         self.sync_http = kwargs.get('sync_http', True)
         self.sync_ftp = kwargs.get('sync_ftp', True)
-        self.target_fsize = kwargs.get('target_fsize', 10)
+        self.target_fsize = kwargs.get('target_fsize') or 10
         self.domain = kwargs.get('domain', '127.0.0.1')
         self.protocol = kwargs.get('protocol', 'http')
         self.enable_iframe = kwargs.get('enable_iframe', True)
-        self.wait_server_seconds = kwargs.get('wait_server_seconds', 5)
-        self.backoff_factor = kwargs.get('backoff_factor', 3)
+        self.wait_server_seconds = kwargs.get('wait_server_seconds') or 5
+        self.backoff_factor = kwargs.get('backoff_factor') or 3
         # Parse args from markdown new syntax. e.g.
         # @scatter_plot(a=1, b=2, c=3)
         # kwargs = {'a': 1, 'b': 2, 'c': 3}

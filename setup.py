@@ -32,7 +32,6 @@ setup(
         'requests>=2.21.0',
         'multiqc>=1.7',
         'sqlalchemy>=1.2.18',
-        'docker>=3.5.1',
         'psutil>=5.5.1'
     ],
     classifiers=[

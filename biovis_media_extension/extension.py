@@ -294,7 +294,7 @@ class BioVisPluginExtension(Extension):
             'enable_iframe': [kwargs.get('enable_iframe'), 'Enable to generate iframe for all plugins'],
             'wait_server_seconds': [kwargs.get('wait_server_seconds'), 'If you specify a wait_server_seconds that greater than 0, sleep() will sleep for wait_server_seconds. When wait_server_seconds less than or equal than 0, it will be set 0.'],
             'backoff_factor': [kwargs.get('backoff_factor'), 'A backoff factor to apply between attempts after the second try (most errors are resolved immediately by a second try without a delay). urllib3 will sleep for: {backoff factor} * (2 ** ({number of total retries} - 1)) seconds. If the backoff_factor is 0.1, then sleep() will sleep for [0.0s, 0.2s, 0.4s, …] between retries. It will never be longer than 120s.'],
-            'target_fsize': [kwargs.get('target_fsize'), 'All files that size is less than target_fsize could be cached.']
+            'target_fsize': [kwargs.get('target_fsize') or 10, 'All files that size is less than target_fsize could be cached.']
         })
 
     def extendMarkdown(self, md, md_globals):
