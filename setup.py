@@ -13,8 +13,8 @@ def get_packages(package):
 setup(
     name='biovis-media-extension',
     version=get_version(),
+    license="AGPL",
     description='Display dynamic plot or more multimedia content in markdown.',
-    long_description=open('README.md').read(),
     author='Jingcheng Yang',
     author_email='yjcyxky@163.com',
     url='https://github.com/biovis-report/biovis-media-extension',
@@ -35,10 +35,10 @@ setup(
         'psutil>=5.5.1'
     ],
     classifiers=[
-        'Development Status :: 1 - Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
-        'License :: AGPL 3.0 License',
+        'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3',
     ],
