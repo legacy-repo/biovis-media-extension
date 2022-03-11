@@ -28,5 +28,6 @@ Such as @plugin-name(arg1=value, arg2=value)
 ## Installation
 
 ```
-pip install biovis-media-extension
+# You need to specify the biovis-report and conda-forge channels with -c argument.
+conda install -c biovis-report -c conda-forge biovis-media-extension
 ```
