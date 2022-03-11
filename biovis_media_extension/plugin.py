@@ -13,7 +13,6 @@ import logging
 import collections
 import pkg_resources
 from biovis_media_extension.models import add_plugin, get_plugin
-from biovis_media_extension.docker_mgmt import Docker
 from biovis_media_extension.process_mgmt import Process
 from biovis_media_extension.utils import (check_dir, copy_and_overwrite,
                                       BashColors, get_candidate_name,
@@ -72,8 +71,6 @@ class BasePlugin:
     4. server mode
     5. multiqc mode
     """
-    docker_image = None
-
     def __init__(self, *args, **kwargs):
         """
         Initialize BasePlugin class.
@@ -687,20 +684,6 @@ class BasePlugin:
     def plotly(self):
         pass
 
-    def docker(self):
-        if self.is_server:
-            if self.docker_image:
-                docker = Docker()
-                port = find_free_port()
-                docker_obj = docker.run_docker(self.docker_image, {}, ports={'3838/tcp': port})
-                id = docker_obj.id
-                access_url = '{protocol}://{domain}:{port}'.format(protocol=self.protocol,
-                                                                   domain=self.domain,
-                                                                   port=port)
-                return id, access_url
-            else:
-                return None, None
-
     def update_context(self, **kwargs):
         new_context = {}
         for key, value in kwargs.items():
@@ -746,17 +729,10 @@ class BasePlugin:
         plugin = get_plugin(metadata['command_md5'], self.plugin_db)
         if not plugin:
             metadata['is_server'] = self.is_server
-            container_id, access_url = self.docker()
-            if container_id and access_url:
-                metadata['container_id'] = container_id
-                metadata['access_url'] = access_url
-                # TODO: add workdir for a docker container
-                # metadata['workdir'] = workdir
-            else:
-                process_id, access_url, workdir = self.server()
-                metadata['process_id'] = process_id
-                metadata['access_url'] = access_url
-                metadata['workdir'] = workdir
+            process_id, access_url, workdir = self.server()
+            metadata['process_id'] = process_id
+            metadata['access_url'] = access_url
+            metadata['workdir'] = workdir
 
             if access_url:
                 add_plugin(**metadata, plugin_db=self.plugin_db)

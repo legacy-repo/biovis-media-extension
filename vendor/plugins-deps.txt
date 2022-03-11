@@ -2,7 +2,7 @@ yum install libgit2 libgit2-devel
 
 source("http://bioconductor.org/biocLite.R")
 
-# R-3.5.1
+# R-3.5.1?
 biocLite("devtools")
 devtools::install_github("r-lib/later@v0.7.3")
 biocLite(c("configr", "dplyr", "shiny", "plotly", "ggpubr", "RColorBrewer", "shinyBS", "shinyjs", "shinydashboard", "ggvis", "ggplot2", "colourpicker"))
